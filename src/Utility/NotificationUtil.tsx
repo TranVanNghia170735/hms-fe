@@ -8,7 +8,7 @@ const successNotification = (message: string) => {
       message: message,
       color: "teal",
       icon: <IconCheck />,
-      autoClose: 5000,
+      autoClose: 1000,
       withCloseButton: true,
       className: "border-green-500 z-50",
       withBorder: true,
@@ -21,7 +21,7 @@ const errorNotification = (message: string) => {
       position: "top-right",
       message: message,
       color: "red",
-      autoClose: 5000,
+      autoClose: 1000,
       withCloseButton: true,
       className: "border-red-500 z-50",
       withBorder: true,
@@ -29,4 +29,4 @@ const errorNotification = (message: string) => {
    });
 };
 
-export { successNotification, errorNotification };
+export { errorNotification, successNotification };

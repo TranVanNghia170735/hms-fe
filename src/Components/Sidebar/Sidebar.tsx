@@ -7,6 +7,7 @@ import {
    IconStethoscope,
    IconVaccine,
 } from "@tabler/icons-react";
+import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 
 const links = [
@@ -18,6 +19,7 @@ const links = [
 ];
 
 const Sidebar = () => {
+   const user = useSelector((state: any) => state.user);
    return (
       <div className="flex">
          <div className="w-64"></div>
@@ -31,9 +33,9 @@ const Sidebar = () => {
                   <div className="p-1 bg-white rounded-full shadow-lg">
                      <Avatar variant="filled" src="./nghiatv8.png" size="xl" alt="it's me" />
                   </div>
-                  <span className="font-medium text-white">Marshal</span>
+                  <span className="font-medium text-white">{user?.name}</span>
                   <Text c="dimmed" size="xs" className="text-light">
-                     Admin
+                     {user?.role}
                   </Text>
                </div>
 
