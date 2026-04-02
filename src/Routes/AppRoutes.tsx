@@ -1,6 +1,10 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
+import DoctorDashboard from "../Layout/DoctorDashboard";
+import PatientDashboard from "../Layout/PatientDashboard";
+import DoctorProfilePage from "../Pages/Doctor/DoctorProfilePage";
 import LoginPage from "../Pages/LoginPage";
+import PatientProfilePage from "../Pages/Patient/PatientProfilePage";
 import RegisterPage from "../Pages/RegisterPage";
 import ProtectedRoutes from "./ProtectedRoutes";
 import PublicRoutes from "./PublicRoutes";
@@ -38,6 +42,37 @@ const AppRoutes = () => {
                <Route path="/patients" element={<div>Random</div>} />
                <Route path="/appointments" element={<div>Random</div>} />
                <Route path="/doctors" element={<div>Random</div>} />
+            </Route>
+
+            {/* Doctor */}
+            <Route
+               path="/doctor"
+               element={
+                  <ProtectedRoutes>
+                     <DoctorDashboard />
+                  </ProtectedRoutes>
+               }
+            >
+               <Route path="dashboard" element={<div>Random</div>} />
+               <Route path="profile" element={<DoctorProfilePage />} />
+               <Route path="patients" element={<div>Random</div>} />
+               <Route path="appointments" element={<div>Random</div>} />
+               <Route path="pharmacy" element={<div>Random</div>} />
+            </Route>
+
+            {/* Patient */}
+            <Route
+               path="/patient"
+               element={
+                  <ProtectedRoutes>
+                     <PatientDashboard />
+                  </ProtectedRoutes>
+               }
+            >
+               <Route path="dashboard" element={<div>Random</div>} />
+               <Route path="profile" element={<PatientProfilePage />} />
+               <Route path="appointments" element={<div>Random</div>} />
+               {/* <Route path="book" element={<div>Random</div>} /> */}
             </Route>
          </Routes>
       </BrowserRouter>

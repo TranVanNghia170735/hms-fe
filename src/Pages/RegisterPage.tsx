@@ -73,7 +73,7 @@ const RegisterPage = () => {
                      { label: "DOCTOR", value: "DOCTOR" },
                      { label: "ADMIN", value: "ADMIN" },
                   ]}
-                  {...form.getInputProps("type")}
+                  {...form.getInputProps("role")}
                />
 
                <TextInput
