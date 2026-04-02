@@ -1,10 +1,14 @@
 import { Avatar, Button, Divider, Modal, NumberInput, Select, Table, TextInput } from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
+import { DateInput } from "@mantine/dates";
+import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { DoctorDepartments, DoctorSpecializations } from "../../../Data/DropdownData";
+import { getDoctor, updateDoctor } from "../../../Service/DoctorProfileService";
+import { formatDate } from "../../../Utility/DateUtility";
+import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
 
 const doctor = {
    name: "Dr. Swapnil Patil",
@@ -23,6 +27,76 @@ const Profile = () => {
    const user = useSelector((state: any) => state.user);
    const [edit, setEdit] = useState(false);
    const [opened, { open, close }] = useDisclosure(false);
+   const [doctor, setDoctor] = useState<any>({});
+
+   const parseArray = (value: any): string[] => {
+      if (Array.isArray(value)) return value;
+      try {
+         const parsed = JSON.parse(value);
+         return Array.isArray(parsed) ? parsed : [];
+      } catch {
+         return [];
+      }
+   };
+
+   useEffect(() => {
+      getDoctor(user.profileId)
+         .then((data) => {
+            setDoctor({ ...data });
+         })
+         .catch((error) => {
+            console.log(error);
+         });
+   }, [user.profileId]);
+
+   const form = useForm({
+      initialValues: {
+         dob: "",
+         phone: "",
+         address: "",
+         licenseNo: "",
+         specialization: "",
+         department: "",
+         totalExp: "",
+      },
+      validate: {
+         dob: (value: any) => (!value ? "Date of Birth is required" : undefined),
+         phone: (value: string) => (!value ? "Phone Number is required" : undefined),
+         licenseNo: (value: string) => (!value ? "License Number is required" : undefined),
+         address: (value: string) => (!value ? "Address is required" : undefined),
+         specialization: (value: string) => (!value ? "Specialization is required" : undefined),
+         department: (value: string) => (!value ? "Department is required" : undefined),
+         totalExp: (value: any) => (value < 0 ? "Experience cannot be negative" : undefined),
+      },
+   });
+
+   const handleSubmit = (e: any) => {
+      let values = form.getValues();
+      form.validate();
+      if (!form.isValid()) return;
+
+      updateDoctor({
+         ...doctor,
+         ...values,
+      })
+         .then((data) => {
+            successNotification("Profile updated successfully");
+            setDoctor({ ...doctor, ...values });
+            setEdit(false);
+         })
+         .catch((error) => {
+            errorNotification(error.response.data.errorMessage);
+         });
+   };
+
+   const handleEdit = () => {
+      form.setValues({
+         ...doctor,
+         dob: doctor.dob ? new Date(doctor.dob) : undefined,
+      });
+      setEdit(true);
+   };
+
    return (
       <div className="p-10">
          <div className="flex justify-between items-start">
@@ -41,11 +115,11 @@ const Profile = () => {
                </div>
             </div>
             {edit ? (
-               <Button onClick={() => setEdit(false)} variant="filled" leftSection={<IconEdit />} size="lg">
+               <Button onClick={handleSubmit} variant="filled" leftSection={<IconEdit />} size="lg" type="submit">
                   Submit
                </Button>
             ) : (
-               <Button onClick={() => setEdit(true)} variant="filled" leftSection={<IconEdit />} size="lg">
+               <Button onClick={handleEdit} variant="filled" leftSection={<IconEdit />} size="lg" type="button">
                   Edit
                </Button>
             )}
@@ -54,22 +128,16 @@ const Profile = () => {
          <div>
             <div className="text-2xl font-medium mb-5 text-neutral-900">Personal Information</div>
             <Table striped stripedColor="primary.1" verticalSpacing="md" withRowBorders={false}>
-               <Table.Tbody>
+               <Table.Tbody className="[&>tr]:!mb-3 [&_td]:!w-1/2">
                   <Table.Tr>
                      <Table.Td className="font-semibold text-xl">Date of Birth</Table.Td>
 
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <DatePickerInput
-                              placeholder="Date of Birth"
-                              onChange={(date) => {
-                                 // Handle date change
-                              }}
-                              clearable
-                           />
+                           <DateInput {...form.getInputProps("dob")} placeholder="Date of Birth" />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.dob}</Table.Td>
+                        <Table.Td className="text-xl">{formatDate(doctor.dob) ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -82,13 +150,11 @@ const Profile = () => {
                               hideControls
                               maxLength={10}
                               clampBehavior="strict"
-                              onChange={(value) => {
-                                 // Handle phone number change
-                              }}
+                              {...form.getInputProps("phone")}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.phone}</Table.Td>
+                        <Table.Td className="text-xl">{doctor.phone ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -96,10 +162,10 @@ const Profile = () => {
 
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <TextInput placeholder="" />
+                           <TextInput placeholder="Address" {...form.getInputProps("address")} />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.address}</Table.Td>
+                        <Table.Td className="text-xl">{doctor.address ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -107,20 +173,24 @@ const Profile = () => {
 
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <NumberInput maxLength={12} clampBehavior="strict" placeholder="Licensce No" hideControls />
+                           <TextInput placeholder="Licensce number" {...form.getInputProps("licenseNo")} />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.licenseNo}</Table.Td>
+                        <Table.Td className="text-xl">{doctor.licenseNo ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
                      <Table.Td className="font-semibold text-xl">Specialization</Table.Td>
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <Select placeholder="Specialization" data={DoctorSpecializations} />
+                           <Select
+                              placeholder="Specialization"
+                              data={DoctorSpecializations}
+                              {...form.getInputProps("specialization")}
+                           />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.specialization}</Table.Td>
+                        <Table.Td className="text-xl">{doctor.specialization ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -128,10 +198,14 @@ const Profile = () => {
 
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <Select placeholder="Department" data={DoctorDepartments} />
+                           <Select
+                              placeholder="Department"
+                              data={DoctorDepartments}
+                              {...form.getInputProps("department")}
+                           />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.department || "None"}</Table.Td>
+                        <Table.Td className="text-xl">{doctor.department ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -145,10 +219,14 @@ const Profile = () => {
                               clampBehavior="strict"
                               placeholder="Total Experience"
                               hideControls
+                              {...form.getInputProps("totalExp")}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{doctor.totalExp || "None"}</Table.Td>
+                        <Table.Td className="text-xl">
+                           {doctor.totalExp ?? "-"}
+                           {doctor.totalExp ? "years" : ""}
+                        </Table.Td>
                      )}
                   </Table.Tr>
                </Table.Tbody>

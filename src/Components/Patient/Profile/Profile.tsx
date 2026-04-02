@@ -1,28 +1,96 @@
 import { Avatar, Button, Divider, Modal, NumberInput, Select, Table, TagsInput, TextInput } from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
+import { DateInput } from "@mantine/dates";
+import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { BloodGroupData } from "../../../Data/DropdownData";
-
-const patient: any = {
-   name: "John Doe",
-   email: "john.doe@example.com",
-   dob: "1990-05-15",
-   phone: "+1 234 567 890",
-   address: "123 Main St, Anytown, USA",
-   addharNo: "1234-5678-9012",
-   bloodGroup: "A+",
-   allergies: "Peanuts",
-   chronicDiseases: "Diabetes",
-   profilePicture: "https://randomuser.me/api/portraits/men/75.jpg",
-};
+import { bloodGroup, BloodGroupData } from "../../../Data/DropdownData";
+import { getPatient, updatePatient } from "../../../Service/PatientProfileService";
+import { formatDate } from "../../../Utility/DateUtility";
+import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
+import { arrayToCSV } from "../../../Utility/OtherUtility";
 
 const Profile = () => {
    const user = useSelector((state: any) => state.user);
    const [edit, setEdit] = useState(false);
    const [opened, { open, close }] = useDisclosure(false);
+
+   const [patient, setPatient] = useState<any>({});
+
+   const parseArray = (value: any): string[] => {
+      if (Array.isArray(value)) return value;
+      try {
+         const parsed = JSON.parse(value);
+         return Array.isArray(parsed) ? parsed : [];
+      } catch {
+         return [];
+      }
+   };
+
+   useEffect(() => {
+      getPatient(user.id)
+         .then((data) => {
+            setPatient({
+               ...data,
+               allergies: data.allergies ? arrayToCSV(JSON.parse(data.allergies)) : null,
+               chronicDisease: data.chronicDisease ? arrayToCSV(JSON.parse(data.allergies)) : null,
+            });
+         })
+         .catch((error) => {
+            console.log(error);
+         });
+   }, [user.id]);
+
+   const form = useForm({
+      initialValues: {
+         dob: patient.dob ? new Date(patient.dob) : undefined,
+         phone: patient.phone || "",
+         address: patient.address || "",
+         aadharNo: patient.aadharNo || "",
+         bloodGroup: patient.bloodGroup || "",
+         allergies: parseArray(patient.allergies) || [],
+         chronicDisease: parseArray(patient.chronicDisease) || [],
+      },
+      validate: {
+         dob: (value: any) => (!value ? "Date of Birth is required" : undefined),
+         phone: (value: string) => (!value ? "Phone Number is required" : undefined),
+         aadharNo: (value: string) => (!value ? "Aadhar Number is required" : undefined),
+         address: (value: string) => (!value ? "Address is required" : undefined),
+      },
+   });
+
+   const handleSubmit = (e: any) => {
+      let values = form.getValues();
+      form.validate();
+      if (!form.isValid()) return;
+
+      updatePatient({
+         ...patient,
+         ...values,
+         allergies: values.allergies ? JSON.stringify(values.allergies) : null,
+         chronicDisease: values.chronicDisease ? JSON.stringify(values.chronicDisease) : null,
+      })
+         .then((data) => {
+            successNotification("Profile updated successfully");
+            setPatient({ ...patient, ...values });
+            setEdit(false);
+         })
+         .catch((error) => {
+            errorNotification(error.response.data.errorMessage);
+         });
+   };
+
+   const handleEdit = () => {
+      form.setValues({
+         ...patient,
+         dob: patient.dob ? new Date(patient.dob) : undefined,
+         chronicDisease: parseArray(patient.chronicDisease),
+         allergies: parseArray(patient.allergies),
+      });
+      setEdit(true);
+   };
+
    return (
       <div className="p-10">
          <div className="flex justify-between items-start">
@@ -41,11 +109,11 @@ const Profile = () => {
                </div>
             </div>
             {edit ? (
-               <Button onClick={() => setEdit(false)} variant="filled" leftSection={<IconEdit />} size="lg">
+               <Button onClick={handleSubmit} variant="filled" leftSection={<IconEdit />} size="lg" type="submit">
                   Submit
                </Button>
             ) : (
-               <Button onClick={() => setEdit(true)} variant="filled" leftSection={<IconEdit />} size="lg">
+               <Button onClick={handleEdit} variant="filled" leftSection={<IconEdit />} size="lg" type="button">
                   Edit
                </Button>
             )}
@@ -54,22 +122,16 @@ const Profile = () => {
          <div>
             <div className="text-2xl font-medium mb-5 text-neutral-900">Personal Information</div>
             <Table striped stripedColor="primary.1" verticalSpacing="md" withRowBorders={false}>
-               <Table.Tbody>
+               <Table.Tbody className="[&>tr]:!mb-3 [&_td]:!w-1/2">
                   <Table.Tr>
                      <Table.Td className="font-semibold text-xl">Date of Birth</Table.Td>
 
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <DatePickerInput
-                              placeholder="Date of Birth"
-                              onChange={(date) => {
-                                 // Handle date change
-                              }}
-                              clearable
-                           />
+                           <DateInput {...form.getInputProps("dob")} placeholder="Date of Birth" />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.dob}</Table.Td>
+                        <Table.Td className="text-xl">{formatDate(patient.dob) ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -82,13 +144,11 @@ const Profile = () => {
                               hideControls
                               maxLength={10}
                               clampBehavior="strict"
-                              onChange={(value) => {
-                                 // Handle phone number change
-                              }}
+                              {...form.getInputProps("phone")}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.phone}</Table.Td>
+                        <Table.Td className="text-xl">{patient.phone ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -96,10 +156,10 @@ const Profile = () => {
 
                      {edit ? (
                         <Table.Td className="text-xl">
-                           <TextInput placeholder="" />
+                           <TextInput placeholder="Enter your address" {...form.getInputProps("address")} />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.address}</Table.Td>
+                        <Table.Td className="text-xl">{patient.address ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -112,10 +172,11 @@ const Profile = () => {
                               clampBehavior="strict"
                               placeholder="Aadhar number"
                               hideControls
+                              {...form.getInputProps("aadharNo")}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.addharNo}</Table.Td>
+                        <Table.Td className="text-xl">{patient.aadharNo ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -126,10 +187,11 @@ const Profile = () => {
                               // label="Blood Group"
                               placeholder="Select blood group"
                               data={BloodGroupData}
+                              {...form.getInputProps("bloodGroup")}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.bloodGroup}</Table.Td>
+                        <Table.Td className="text-xl">{bloodGroup[patient.bloodGroup] ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -139,13 +201,12 @@ const Profile = () => {
                         <Table.Td className="text-xl">
                            <TagsInput
                               placeholder="Add allergy"
-                              onChange={(value) => {
-                                 // Handle allergies change
-                              }}
+                              {...form.getInputProps("allergies")}
+                              value={form.values.allergies || []}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.allergies || "None"}</Table.Td>
+                        <Table.Td className="text-xl">{patient.allergies ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
@@ -155,13 +216,12 @@ const Profile = () => {
                         <Table.Td className="text-xl">
                            <TagsInput
                               placeholder="Add chronic disease"
-                              onChange={(value) => {
-                                 // Handle chronic diseases change
-                              }}
+                              {...form.getInputProps("chronicDisease")}
+                              value={form.values.chronicDisease || []}
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.chronicDiseases || "None"}</Table.Td>
+                        <Table.Td className="text-xl">{patient.chronicDiseases ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                </Table.Tbody>
