@@ -1,22 +1,21 @@
-import { Button, Modal, Select, Textarea, TextInput } from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
+import { ActionIcon, Button, LoadingOverlay, Modal, Select, Text, Textarea, TextInput } from "@mantine/core";
+import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
-import { IconPlus, IconSearch } from "@tabler/icons-react";
+import { modals } from "@mantine/modals";
+import { IconEdit, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode, FilterOperator } from "primereact/api";
-import { Calendar } from "primereact/calendar";
-import { Column, ColumnFilterElementTemplateOptions } from "primereact/column";
+import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
-import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
-import { InputNumber } from "primereact/inputnumber";
-import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
-import { ProgressBar } from "primereact/progressbar";
-import { Slider, SliderChangeEvent } from "primereact/slider";
+import "primereact/resources/themes/lara-light-blue/theme.css";
 import { Tag } from "primereact/tag";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { appointmentReasons } from "../../../Data/DropdownData";
+import { cancelAppointment, getAppointmentsByPatient, scheduleAppointment } from "../../../Service/AppointmentService";
 import { getDoctorDropdown } from "../../../Service/DoctorProfileService";
+import { formatDateWithTime } from "../../../Utility/DateUtility";
+import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
 
 interface Country {
    name: string;
@@ -44,150 +43,53 @@ interface Customer {
 export default function Appointment() {
    const [opened, { open, close }] = useDisclosure(false);
    const [doctors, setDoctors] = useState<any[]>([]);
-   const [customers, setCustomers] = useState<Customer[]>([]);
-   const [selectedCustomers, setSelectedCustomers] = useState<Customer[]>([]);
+   const [appointments, setAppointments] = useState<any[]>([]);
    const user = useSelector((state: any) => state.user);
+   const [loading, setLoading] = useState<boolean>(false);
    const [filters, setFilters] = useState<DataTableFilterMeta>({
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-      "country.name": {
+      doctorName: {
          operator: FilterOperator.AND,
          constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }],
       },
-      representative: { value: null, matchMode: FilterMatchMode.IN },
-      date: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
-      balance: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-      status: { operator: FilterOperator.OR, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-      activity: { value: null, matchMode: FilterMatchMode.BETWEEN },
+      reason: {
+         operator: FilterOperator.AND,
+         constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }],
+      },
+      notes: {
+         operator: FilterOperator.AND,
+         constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }],
+      },
+      status: { value: null, matchMode: FilterMatchMode.IN },
    });
    const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
-   const [representatives] = useState<Representative[]>([
-      { name: "Amy Elsner", image: "amyelsner.png" },
-      { name: "Anna Fali", image: "annafali.png" },
-      { name: "Asiya Javayant", image: "asiyajavayant.png" },
-      { name: "Bernardo Dominic", image: "bernardodominic.png" },
-      { name: "Elwin Sharvill", image: "elwinsharvill.png" },
-      { name: "Ioni Bowcher", image: "ionibowcher.png" },
-      { name: "Ivan Magalhaes", image: "ivanmagalhaes.png" },
-      { name: "Onyama Limba", image: "onyamalimba.png" },
-      { name: "Stephen Shaw", image: "stephenshaw.png" },
-      { name: "XuXue Feng", image: "xuxuefeng.png" },
-   ]);
-   const [statuses] = useState<string[]>(["unqualified", "qualified", "new", "negotiation", "renewal"]);
 
    const getSeverity = (status: string) => {
       switch (status) {
-         case "unqualified":
+         case "CANCELLED":
             return "danger";
 
-         case "qualified":
+         case "COMPLETED":
             return "success";
 
-         case "new":
+         case "SCHEDULED":
             return "info";
 
          case "negotiation":
             return "warning";
-
-         case "renewal":
+         default:
             return null;
       }
    };
 
    useEffect(() => {
-      // CustomerService.getCustomersLarge().then((data) => setCustomers(getCustomers(data)));
-      setCustomers([
-         {
-            id: 1000,
-            name: "James Butt",
-            country: {
-               name: "Algeria",
-               code: "dz",
-            },
-            company: "Benton, John B Jr",
-            date: "2015-09-13",
-            status: "unqualified",
-            verified: true,
-            activity: 17,
-            representative: {
-               name: "Ioni Bowcher",
-               image: "ionibowcher.png",
-            },
-            balance: 70663,
-         },
-         {
-            id: 1001,
-            name: "Anna Smith",
-            country: {
-               name: "Germany",
-               code: "de",
-            },
-            company: "Smith Logistics",
-            date: "2018-03-22",
-            status: "qualified",
-            verified: false,
-            activity: 45,
-            representative: {
-               name: "Anna Fali",
-               image: "annafali.png",
-            },
-            balance: 45200,
-         },
-         {
-            id: 1002,
-            name: "Carlos Diaz",
-            country: {
-               name: "Mexico",
-               code: "mx",
-            },
-            company: "Diaz Corp",
-            date: "2020-11-10",
-            status: "new",
-            verified: true,
-            activity: 60,
-            representative: {
-               name: "Asiya Javayant",
-               image: "asiyajavayant.png",
-            },
-            balance: 12300,
-         },
-         {
-            id: 1003,
-            name: "Liam Johnson",
-            country: {
-               name: "United States",
-               code: "us",
-            },
-            company: "Johnson & Co",
-            date: "2017-06-05",
-            status: "negotiation",
-            verified: false,
-            activity: 30,
-            representative: {
-               name: "Bernardo Dominic",
-               image: "bernardodominic.png",
-            },
-            balance: 88000,
-         },
-         {
-            id: 1004,
-            name: "Yuki Tanaka",
-            country: {
-               name: "Japan",
-               code: "jp",
-            },
-            company: "Tanaka Industries",
-            date: "2021-01-15",
-            status: "renewal",
-            verified: true,
-            activity: 75,
-            representative: {
-               name: "Elwin Sharvill",
-               image: "elwinsharvill.png",
-            },
-            balance: 54000,
-         },
-      ]);
+      getAppointmentsByPatient(user.profileId)
+         .then((data) => {
+            setAppointments(getCustomers(data));
+         })
+         .catch((error) => {
+            console.error("Error fetching appointments data:", user.profileId);
+         });
       getDoctorDropdown()
          .then((data) => {
             console.log("Doctor dropdown data:", data);
@@ -204,18 +106,6 @@ export default function Appointment() {
 
          return d;
       });
-   };
-
-   const formatDate = (value: string | Date) => {
-      return new Date(value).toLocaleDateString("en-US", {
-         day: "2-digit",
-         month: "2-digit",
-         year: "numeric",
-      });
-   };
-
-   const formatCurrency = (value: number) => {
-      return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
    };
 
    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,227 +152,124 @@ export default function Appointment() {
       );
    };
 
-   const countryBodyTemplate = (rowData: Customer) => {
-      return (
-         <div className="flex align-items-center gap-2">
-            <img
-               alt="flag"
-               src="https://primefaces.org/cdn/primereact/images/flag/flag_placeholder.png"
-               className={`flag flag-${rowData.country.code}`}
-               style={{ width: "24px" }}
-            />
-            <span>{rowData.country.name}</span>
-         </div>
-      );
-   };
-
-   const representativeBodyTemplate = (rowData: Customer) => {
-      const representative = rowData.representative;
-
-      return (
-         <div className="flex align-items-center gap-2">
-            <img
-               alt={representative.name}
-               src={`https://primefaces.org/cdn/primereact/images/avatar/${representative.image}`}
-               width="32"
-            />
-            <span>{representative.name}</span>
-         </div>
-      );
-   };
-
-   const representativeFilterTemplate = (options: ColumnFilterElementTemplateOptions) => {
-      return (
-         <React.Fragment>
-            <div className="mb-3 font-bold">Agent Picker</div>
-            <MultiSelect
-               value={options.value}
-               options={representatives}
-               itemTemplate={representativesItemTemplate}
-               onChange={(e: MultiSelectChangeEvent) => options.filterCallback(e.value)}
-               optionLabel="name"
-               placeholder="Any"
-               className="p-column-filter"
-            />
-         </React.Fragment>
-      );
-   };
-
-   const representativesItemTemplate = (option: Representative) => {
-      return (
-         <div className="flex align-items-center gap-2">
-            <img
-               alt={option.name}
-               src={`https://primefaces.org/cdn/primereact/images/avatar/${option.image}`}
-               width="32"
-            />
-            <span>{option.name}</span>
-         </div>
-      );
-   };
-
-   const dateBodyTemplate = (rowData: Customer) => {
-      return formatDate(rowData.date);
-   };
-
-   const dateFilterTemplate = (options: ColumnFilterElementTemplateOptions) => {
-      return (
-         <Calendar
-            value={options.value}
-            onChange={(e) => options.filterCallback(e.value, options.index)}
-            dateFormat="mm/dd/yy"
-            placeholder="mm/dd/yyyy"
-            mask="99/99/9999"
-         />
-      );
-   };
-
-   const balanceBodyTemplate = (rowData: Customer) => {
-      return formatCurrency(rowData.balance);
-   };
-
-   const balanceFilterTemplate = (options: ColumnFilterElementTemplateOptions) => {
-      return (
-         <InputNumber
-            value={options.value}
-            onChange={(e) => options.filterCallback(e.value, options.index)}
-            mode="currency"
-            currency="USD"
-            locale="en-US"
-         />
-      );
-   };
-
    const statusBodyTemplate = (rowData: Customer) => {
       return <Tag value={rowData.status} severity={getSeverity(rowData.status)} />;
    };
 
-   const statusFilterTemplate = (options: ColumnFilterElementTemplateOptions) => {
+   const handleDelete = (rowData: any) => {
+      modals.openConfirmModal({
+         title: <span className="text-xl font-serif font-semibold">Are you sure</span>,
+         centered: true,
+         children: <Text size="sm">You want to cancel this appointment? This action cannot be undone.</Text>,
+         labels: { confirm: "Confirm", cancel: "Cancel" },
+         onConfirm: () => {
+            setLoading(true);
+            cancelAppointment(rowData.id)
+               .then(() => {
+                  successNotification("Appointment cancelled successfully");
+                  setAppointments(
+                     appointments.map((appointment) =>
+                        appointment.id === rowData.id ? { ...appointment, status: "CANCELLED" } : appointment,
+                     ),
+                  );
+               })
+               .catch((error) => {
+                  errorNotification(error.response?.data?.errorMessage || "Failed to cancel appointment");
+               });
+         },
+      });
+   };
+
+   const actionBodyTemplate = (rowData: any) => {
       return (
-         <Dropdown
-            value={options.value}
-            options={statuses}
-            onChange={(e: DropdownChangeEvent) => options.filterCallback(e.value, options.index)}
-            itemTemplate={statusItemTemplate}
-            placeholder="Select One"
-            className="p-column-filter"
-            showClear
-         />
+         <div className="flex gap-2">
+            <ActionIcon>
+               <IconEdit size={20} stroke={1.5} />
+            </ActionIcon>
+
+            <ActionIcon color="red" onClick={() => handleDelete(rowData)}>
+               <IconTrash size={20} stroke={1.5} />
+            </ActionIcon>
+         </div>
       );
-   };
-
-   const statusItemTemplate = (option: string) => {
-      return <Tag value={option} severity={getSeverity(option)} />;
-   };
-
-   const activityBodyTemplate = (rowData: Customer) => {
-      return <ProgressBar value={rowData.activity} showValue={false} style={{ height: "6px" }}></ProgressBar>;
-   };
-
-   const activityFilterTemplate = (options: ColumnFilterElementTemplateOptions) => {
-      return (
-         <>
-            <Slider
-               value={options.value}
-               onChange={(e: SliderChangeEvent) => options.filterCallback(e.value)}
-               range
-               className="m-3"
-            ></Slider>
-            <div className="flex align-items-center justify-content-between px-2">
-               <span>{options.value ? options.value[0] : 0}</span>
-               <span>{options.value ? options.value[1] : 100}</span>
-            </div>
-         </>
-      );
-   };
-
-   const actionBodyTemplate = () => {
-      return <Button type="button"></Button>;
    };
 
    const header = renderHeader();
 
-   const handleSubmit = (e: any) => {
-      const values = form.values;
-      console.log("Form values:", values);
-      // Here you can add the logic to submit the form data to your backend or perform any other actions needed
-      close(); // Close the modal after submission
+   const handleSubmit = (values: any) => {
+      console.log("Appointment schedule with values: ", values);
+      setLoading(true);
+      scheduleAppointment(values)
+         .then((data) => {
+            close();
+            form.reset();
+            successNotification("Appointment scheduled successfully");
+         })
+         .catch((error) => {
+            errorNotification(error.response?.data?.errorMessage || "Failed to schedule appointment");
+            setLoading(false);
+         })
+         .finally(() => {
+            setLoading(false);
+         });
+   };
+
+   const timeTemplate = (rowData: any) => {
+      return <span>{formatDateWithTime(rowData.appointmentTime)}</span>;
    };
 
    return (
       <div className="card">
          <DataTable
-            value={customers}
+            stripedRows
+            value={appointments}
+            size="small"
             paginator
             header={header}
             rows={10}
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
             rowsPerPageOptions={[10, 25, 50]}
             dataKey="id"
-            selectionMode="checkbox"
-            selection={selectedCustomers}
-            onSelectionChange={(e) => {
-               const customers = e.value as Customer[];
-               setSelectedCustomers(customers);
-            }}
             filters={filters}
             filterDisplay="menu"
-            globalFilterFields={["name", "country.name", "representative.name", "balance", "status"]}
-            emptyMessage="No customers found."
+            globalFilterFields={["doctorName", "reason", "notes", "status"]}
+            emptyMessage="No appointment found."
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
          >
-            <Column selectionMode="multiple" headerStyle={{ width: "3rem" }}></Column>
             <Column
-               field="name"
-               header="Name"
+               field="doctorName"
+               header="Doctor"
+               sortable
+               filter
+               filterPlaceholder="Search by name"
+               style={{ minWidth: "14rem" }}
+            />
+
+            <Column
+               field="appointmentTime"
+               header="Appointment Time"
+               sortable
+               style={{ minWidth: "14rem" }}
+               body={timeTemplate}
+            />
+
+            <Column
+               field="reason"
+               header="Reason"
                sortable
                filter
                filterPlaceholder="Search by name"
                style={{ minWidth: "14rem" }}
             />
             <Column
-               field="country.name"
-               header="Country"
+               field="notes"
+               header="Notes"
                sortable
-               filterField="country.name"
+               filter
+               filterPlaceholder="Search by name"
                style={{ minWidth: "14rem" }}
-               body={countryBodyTemplate}
-               filter
-               filterPlaceholder="Search by country"
             />
-            <Column
-               header="Agent"
-               sortable
-               sortField="representative.name"
-               filterField="representative"
-               showFilterMatchModes={false}
-               filterMenuStyle={{ width: "14rem" }}
-               style={{ minWidth: "14rem" }}
-               body={representativeBodyTemplate}
-               filter
-               filterElement={representativeFilterTemplate}
-            />
-            <Column
-               field="date"
-               header="Date"
-               sortable
-               filterField="date"
-               dataType="date"
-               style={{ minWidth: "12rem" }}
-               body={dateBodyTemplate}
-               filter
-               filterElement={dateFilterTemplate}
-            />
-            <Column
-               field="balance"
-               header="Balance"
-               sortable
-               dataType="numeric"
-               style={{ minWidth: "12rem" }}
-               body={balanceBodyTemplate}
-               filter
-               filterElement={balanceFilterTemplate}
-            />
+
             <Column
                field="status"
                header="Status"
@@ -491,18 +278,8 @@ export default function Appointment() {
                style={{ minWidth: "12rem" }}
                body={statusBodyTemplate}
                filter
-               filterElement={statusFilterTemplate}
             />
-            <Column
-               field="activity"
-               header="Activity"
-               sortable
-               showFilterMatchModes={false}
-               style={{ minWidth: "12rem" }}
-               body={activityBodyTemplate}
-               filter
-               filterElement={activityFilterTemplate}
-            />
+
             <Column
                headerStyle={{ width: "5rem", textAlign: "center" }}
                bodyStyle={{ textAlign: "center", overflow: "visible" }}
@@ -516,6 +293,7 @@ export default function Appointment() {
             title={<div className="text-xl font-semibold text-primary-500">Schedule Appointment</div>}
             centered
          >
+            <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
             <form className="grid grid-cols-1 gap-5" onSubmit={form.onSubmit(handleSubmit)}>
                <Select
                   {...form.getInputProps("doctorId")}
@@ -525,7 +303,8 @@ export default function Appointment() {
                   placeholder="Select Doctor"
                   className="w-full"
                />
-               <DatePickerInput
+               <DateTimePicker
+                  minDate={new Date()}
                   {...form.getInputProps("appointmentTime")}
                   withAsterisk
                   label="Appointment Time"
