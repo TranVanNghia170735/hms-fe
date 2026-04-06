@@ -58,4 +58,19 @@ const DoctorDepartments = [
    "General Medicine",
 ];
 
-export { bloodGroup, BloodGroupData, DoctorDepartments, DoctorSpecializations };
+const appointmentReasons = [
+   "General Consultation",
+   "Follow-up",
+   "Prescription Refill",
+   "Lab Results Review",
+   "Specialist Referral",
+   "Vaccination",
+   "Health Screening",
+   "Chronic Condition Management",
+   "Mental Health Support",
+   "Physical Therapy",
+   "Surgical Consultation",
+   "Emergency Care",
+];
+
+export { appointmentReasons, bloodGroup, BloodGroupData, DoctorDepartments, DoctorSpecializations };

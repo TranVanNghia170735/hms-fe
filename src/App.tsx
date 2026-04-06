@@ -3,10 +3,17 @@ import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/notifications/styles.css";
+import "primeflex/primeflex.css";
+import "primereact/resources/themes/lara-light-blue/theme.css";
+import "primereact/resources/primereact.min.css";
+import "primeicons/primeicons.css";
 import { Provider } from "react-redux";
 import "./App.css";
 import AppRoutes from "./Routes/AppRoutes";
 import Store from "./Store";
+
+import { PrimeReactProvider} from 'primereact/api';
+        
 
 const theme = createTheme({
    focusRing: "never",
@@ -53,8 +60,10 @@ function App() {
    return (
       <Provider store={Store}>
          <MantineProvider theme={theme}>
+            <PrimeReactProvider>
             <Notifications position="top-center" />
             <AppRoutes />
+            </PrimeReactProvider>
          </MantineProvider>
       </Provider>
    );

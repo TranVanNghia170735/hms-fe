@@ -1,3 +1,18 @@
-@tailwind base;
+/*
+ * PrimeReact must load AFTER Mantine (see App.tsx). If it sits in a lower-priority
+ * @layer while Mantine is unlayered, Mantine resets win and DataTable looks unstyled.
+ */
+@layer tailwind-base, tailwind-utilities;
+
+@layer tailwind-base {
+   @tailwind base;
+}
+
+@layer tailwind-utilities {
+   @tailwind components;
+   @tailwind utilities;
+}
+
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
