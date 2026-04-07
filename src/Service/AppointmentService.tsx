@@ -45,4 +45,20 @@ const getAppointmentsByPatient = async (patientId: any) => {
       });
 };
 
-export { cancelAppointment, getAppointment, getAppointmentDetails, getAppointmentsByPatient, scheduleAppointment };
+const getAppointmentsByDoctor = async (doctorId: any) => {
+   return axiosInstance
+      .get(`/appointment/getAllByDoctor/${doctorId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+export {
+   cancelAppointment,
+   getAppointment,
+   getAppointmentDetails,
+   getAppointmentsByDoctor,
+   getAppointmentsByPatient,
+   scheduleAppointment,
+};

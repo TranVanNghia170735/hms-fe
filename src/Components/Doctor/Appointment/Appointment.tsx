@@ -13,7 +13,7 @@ import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconEdit, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode, FilterOperator } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
@@ -23,7 +23,7 @@ import { Toolbar } from "primereact/toolbar";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { appointmentReasons } from "../../../Data/DropdownData";
-import { cancelAppointment, getAppointmentsByPatient, scheduleAppointment } from "../../../Service/AppointmentService";
+import { cancelAppointment, getAppointmentsByDoctor, scheduleAppointment } from "../../../Service/AppointmentService";
 import { getDoctorDropdown } from "../../../Service/DoctorProfileService";
 import { formatDateWithTime } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
@@ -60,7 +60,7 @@ export default function Appointment() {
    const [loading, setLoading] = useState<boolean>(false);
    const [filters, setFilters] = useState<DataTableFilterMeta>({
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      doctorName: {
+      patientName: {
          operator: FilterOperator.AND,
          constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }],
       },
@@ -189,9 +189,9 @@ export default function Appointment() {
    const actionBodyTemplate = (rowData: any) => {
       return (
          <div className="flex gap-2">
-            <ActionIcon>
+            {/* <ActionIcon>
                <IconEdit size={20} stroke={1.5} />
-            </ActionIcon>
+            </ActionIcon> */}
 
             <ActionIcon color="red" onClick={() => handleDelete(rowData)}>
                <IconTrash size={20} stroke={1.5} />
@@ -204,7 +204,11 @@ export default function Appointment() {
 
    const handleSubmit = (values: any) => {
       setLoading(true);
-      scheduleAppointment(values)
+      const payload = {
+         ...values,
+         appointmentTime: new Date(values.appointmentTime).toISOString(),
+      };
+      scheduleAppointment(payload)
          .then((data) => {
             close();
             form.reset();
@@ -276,7 +280,7 @@ export default function Appointment() {
    });
 
    const fetchData = () => {
-      getAppointmentsByPatient(user.profileId)
+      getAppointmentsByDoctor(user.profileId)
          .then((data) => {
             setAppointments(getCustomers(data));
          })
@@ -287,12 +291,7 @@ export default function Appointment() {
 
    return (
       <div className="card">
-         <Toolbar
-            className="mb-4"
-            start={leftToolbarTemplate}
-            center={centerToolbarTemplate}
-            end={rightToolbarTemplate}
-         ></Toolbar>
+         <Toolbar className="mb-4" start={centerToolbarTemplate} end={rightToolbarTemplate}></Toolbar>
          <DataTable
             stripedRows
             value={filteredAppointments}
@@ -305,18 +304,20 @@ export default function Appointment() {
             dataKey="id"
             filters={filters}
             filterDisplay="menu"
-            globalFilterFields={["doctorName", "reason", "notes", "status"]}
+            globalFilterFields={["patientName", "reason", "notes", "status"]}
             emptyMessage="No appointment found."
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
          >
             <Column
-               field="doctorName"
-               header="Doctor"
+               field="patientName"
+               header="Patient"
                sortable
                filter
                filterPlaceholder="Search by name"
                style={{ minWidth: "14rem" }}
             />
+
+            <Column field="patientPhone" header="Phone" style={{ minWidth: "14rem" }} />
 
             <Column
                field="appointmentTime"

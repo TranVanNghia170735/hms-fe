@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
 import DoctorDashboard from "../Layout/DoctorDashboard";
 import PatientDashboard from "../Layout/PatientDashboard";
+import DoctorAppointmentPage from "../Pages/Doctor/DoctorAppointmentPage";
 import DoctorProfilePage from "../Pages/Doctor/DoctorProfilePage";
 import LoginPage from "../Pages/LoginPage";
 import PatientAppointmentPage from "../Pages/Patient/PatientAppointmentPage";
@@ -57,7 +58,7 @@ const AppRoutes = () => {
                <Route path="dashboard" element={<div>Random</div>} />
                <Route path="profile" element={<DoctorProfilePage />} />
                <Route path="patients" element={<div>Random</div>} />
-               <Route path="appointments" element={<div>Random</div>} />
+               <Route path="appointments" element={<DoctorAppointmentPage />} />
                <Route path="pharmacy" element={<div>Random</div>} />
             </Route>
 
@@ -73,7 +74,6 @@ const AppRoutes = () => {
                <Route path="dashboard" element={<div>Random</div>} />
                <Route path="profile" element={<PatientProfilePage />} />
                <Route path="appointments" element={<PatientAppointmentPage />} />
-               {/* <Route path="book" element={<div>Random</div>} /> */}
             </Route>
          </Routes>
       </BrowserRouter>
