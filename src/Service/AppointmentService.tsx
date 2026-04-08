@@ -29,7 +29,7 @@ const getAppointment = async (id: any) => {
 
 const getAppointmentDetails = async (id: any) => {
    return axiosInstance
-      .get("/appointment/get/details/", id)
+      .get(`/appointment/get/details/${id}`)
       .then((response) => response.data)
       .catch((error) => {
          throw error;

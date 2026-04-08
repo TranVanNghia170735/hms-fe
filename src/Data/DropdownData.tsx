@@ -73,4 +73,43 @@ const appointmentReasons = [
    "Emergency Care",
 ];
 
-export { appointmentReasons, bloodGroup, BloodGroupData, DoctorDepartments, DoctorSpecializations };
+const symptoms = [
+   "Fever",
+   "Cough",
+   "Shortness of Breath",
+   "Fatigue",
+   "Headache",
+   "Sore Throat",
+   "Runny Nose",
+   "Muscle Aches",
+   "Loss of Taste or Smell",
+   "Nausea",
+   "Vomiting",
+   "Diarrhea",
+   "Dizziness",
+   "Muscle Pain",
+   "Chest Pain",
+   "Abdominal Pain",
+   "Back Pain",
+   "Joint Pain",
+   "Rash",
+   "Swelling",
+];
+
+const tests = [
+   "CBC",
+   "Blood Sugar",
+   "Lipid Profile",
+   "Liver Function Test",
+   "Kidney Function Test",
+   "Thyroid Function Test",
+   "Urinalysis",
+   "ECG",
+   "X-ray",
+   "MRI",
+   "CT Scan",
+   "Ultrasound",
+   "COVID-19 Test",
+];
+
+export { appointmentReasons, bloodGroup, BloodGroupData, DoctorDepartments, DoctorSpecializations, symptoms, tests };

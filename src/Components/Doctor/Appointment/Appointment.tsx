@@ -13,7 +13,7 @@ import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconPlus, IconSearch, IconTrash } from "@tabler/icons-react";
+import { IconEye, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode, FilterOperator } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
@@ -22,6 +22,7 @@ import { Tag } from "primereact/tag";
 import { Toolbar } from "primereact/toolbar";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { appointmentReasons } from "../../../Data/DropdownData";
 import { cancelAppointment, getAppointmentsByDoctor, scheduleAppointment } from "../../../Service/AppointmentService";
 import { getDoctorDropdown } from "../../../Service/DoctorProfileService";
@@ -52,6 +53,7 @@ interface Customer {
 }
 
 export default function Appointment() {
+   const navigate = useNavigate();
    const [opened, { open, close }] = useDisclosure(false);
    const [doctors, setDoctors] = useState<any[]>([]);
    const [appointments, setAppointments] = useState<any[]>([]);
@@ -189,9 +191,9 @@ export default function Appointment() {
    const actionBodyTemplate = (rowData: any) => {
       return (
          <div className="flex gap-2">
-            {/* <ActionIcon>
-               <IconEdit size={20} stroke={1.5} />
-            </ActionIcon> */}
+            <ActionIcon onClick={() => navigate("" + rowData.id)}>
+               <IconEye size={20} stroke={1.5} />
+            </ActionIcon>
 
             <ActionIcon color="red" onClick={() => handleDelete(rowData)}>
                <IconTrash size={20} stroke={1.5} />
