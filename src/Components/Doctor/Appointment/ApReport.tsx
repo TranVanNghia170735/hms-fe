@@ -1,10 +1,14 @@
 import { ActionIcon, Button, Fieldset, MultiSelect, NumberInput, Select, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { IconEye, IconSearch, IconTrash } from "@tabler/icons-react";
+import { FilterMatchMode } from "primereact/api";
+import { Column } from "primereact/column";
+import { DataTable, DataTableFilterMeta } from "primereact/datatable";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { dosageFrequencies, symptoms, tests } from "../../../Data/DropdownData";
-import { createAppointmentReport } from "../../../Service/AppointmentService";
+import { createAppointmentReport, getReportsByPatientId, isReportExists } from "../../../Service/AppointmentService";
+import { formatDate } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
 
 type Medicine = {
@@ -20,8 +24,47 @@ type Medicine = {
 };
 
 const ApReport = ({ appointment }: any) => {
-   const dispatch = useDispatch();
+   const navigate = useNavigate();
+   const [data, setData] = useState<any[]>([]);
+   const [allowAdd, setAllowAdd] = useState<boolean>(false);
+   const [edit, setEdit] = useState<boolean>(false);
+   const [filters, setFilters] = useState<DataTableFilterMeta>({
+      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+   });
+   const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
+   const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      let _filters: any = { ...filters };
+
+      _filters["global"].value = value;
+      setFilters(_filters);
+      setGlobalFilterValue(value);
+   };
+
    const [loading, setLoading] = useState(false);
+   useEffect(() => {
+      fetchData();
+   }, [appointment.id, appointment?.patientId]);
+
+   const fetchData = () => {
+      if (!appointment?.patientId) return;
+      getReportsByPatientId(appointment?.patientId)
+         .then((res) => {
+            setData(res);
+         })
+         .catch((err) => {
+            console.log("Error fetching reports:", err);
+         });
+      isReportExists(appointment.id)
+         .then((res) => {
+            setAllowAdd(!res);
+         })
+         .catch((err) => {
+            setAllowAdd(true);
+            setEdit(true);
+         });
+   };
+
    const form = useForm({
       initialValues: {
          symptoms: [],
@@ -85,6 +128,9 @@ const ApReport = ({ appointment }: any) => {
          .then((res) => {
             successNotification("Report created successfully");
             form.reset();
+            setEdit(false);
+            setAllowAdd(false);
+            fetchData();
          })
          .catch((err) => {
             errorNotification(err?.response?.data?.errorMessage || "Error creating report");
@@ -93,148 +139,216 @@ const ApReport = ({ appointment }: any) => {
             setLoading(false);
          });
    };
+   const renderHeader = () => {
+      return (
+         <div className="flex flex-wrap gap-2 justify-between items-center">
+            {allowAdd && (
+               <Button variant="filled" onClick={() => setEdit(true)}>
+                  Add Report
+               </Button>
+            )}
+            <TextInput
+               leftSection={<IconSearch />}
+               fw={500}
+               value={globalFilterValue}
+               onChange={onGlobalFilterChange}
+               placeholder="Keyword Search"
+            />
+         </div>
+      );
+   };
+
+   const header = renderHeader();
+
+   const actionBodyTemplate = (rowData: any) => {
+      return (
+         <div className="flex gap-2">
+            <ActionIcon onClick={() => navigate("/doctor/appointments/" + rowData.appointmentId)}>
+               <IconEye size={20} stroke={1.5} />
+            </ActionIcon>
+         </div>
+      );
+   };
 
    return (
-      <form onSubmit={form.onSubmit(handleSubmit)} className="grid gap-5">
-         <Fieldset
-            className="grid gap-4 grid-cols-1"
-            legend={<span className="text-lg font-medium text-primary-500">Personal information</span>}
-            radius="md"
-         >
-            <MultiSelect
-               {...form.getInputProps("symptoms")}
-               withAsterisk
-               label="Symptoms"
-               placeholder="Pick symptoms"
-               data={symptoms}
-               className="w-full"
-            />
+      <div>
+         {!edit ? (
+            <DataTable
+               stripedRows
+               value={data}
+               size="small"
+               paginator
+               header={header}
+               rows={10}
+               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+               rowsPerPageOptions={[10, 25, 50]}
+               dataKey="id"
+               filters={filters}
+               filterDisplay="menu"
+               globalFilterFields={["doctorName", "notes"]}
+               emptyMessage="No appointment found."
+               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            >
+               <Column field="doctorName" header="Doctor" />
 
-            <MultiSelect
-               {...form.getInputProps("tests")}
-               label="Tests"
-               placeholder="Pick tests"
-               data={tests}
-               className="w-full"
-            />
+               <Column field="diagnosis" header="Diagnosis" />
 
-            <TextInput
-               {...form.getInputProps("diagnosis")}
-               withAsterisk
-               label="Diagnosis"
-               placeholder="Enter diagnosis"
-               className="w-full"
-            />
-            <TextInput
-               {...form.getInputProps("referral")}
-               label="Referral"
-               placeholder="Enter referral details"
-               className="w-full"
-            />
-
-            <Textarea
-               {...form.getInputProps("notes")}
-               label="Notes"
-               placeholder="Enter any additional notes"
-               className="w-full"
-            />
-         </Fieldset>
-
-         <Fieldset
-            className="grid gap-5 w-full"
-            legend={<span className="text-lg font-medium text-primary-500">Prescription</span>}
-            radius="md"
-         >
-            {form.values.prescription.medicines.map((_medicine, index) => (
+               <Column
+                  field="reportDate"
+                  header="Report Date"
+                  sortable
+                  body={(rowData) => formatDate(rowData.createdAt)}
+               />
+               <Column field="notes" header="Notes" style={{ minWidth: "14rem" }} />
+               <Column
+                  headerStyle={{ width: "5rem", textAlign: "center" }}
+                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                  body={actionBodyTemplate}
+               />
+            </DataTable>
+         ) : (
+            <form onSubmit={form.onSubmit(handleSubmit)} className="grid gap-5">
                <Fieldset
-                  legend={
-                     <div className="flex items-center gap-5 w-full">
-                        <h1 className="text-lg font-medium">Medicine {index + 1}</h1>
-                        <ActionIcon
-                           onClick={() => removeMedicine(index)}
-                           variant="filled"
-                           color="red"
-                           size="md"
-                           className="mb-2"
-                        >
-                           <IconTrash />
-                        </ActionIcon>
-                     </div>
-                  }
-                  className="grid gap-4 grid-cols-2"
+                  className="grid gap-4 grid-cols-1"
+                  legend={<span className="text-lg font-medium text-primary-500">Personal information</span>}
+                  radius="md"
                >
-                  <TextInput
-                     {...form.getInputProps(`prescription.medicines.${index}.name`)}
+                  <MultiSelect
+                     {...form.getInputProps("symptoms")}
                      withAsterisk
-                     label="Medicine"
-                     placeholder="Enter medicine name"
-                     className="w-full"
-                  />
-                  <TextInput
-                     {...form.getInputProps(`prescription.medicines.${index}.dosage`)}
-                     withAsterisk
-                     label="Dosage"
-                     placeholder="Enter dosage"
-                     className="w-full"
-                  />
-                  <Select
-                     {...form.getInputProps(`prescription.medicines.${index}.frequency`)}
-                     withAsterisk
-                     label="Frequency"
-                     placeholder="Enter frequency"
-                     data={dosageFrequencies}
-                     className="w-full"
-                  />
-                  <NumberInput
-                     {...form.getInputProps(`prescription.medicines.${index}.duration`)}
-                     withAsterisk
-                     label="Duration (days)"
-                     placeholder="Enter duration in days"
-                     className="w-full"
-                  />
-                  <Select
-                     {...form.getInputProps(`prescription.medicines.${index}.route`)}
-                     withAsterisk
-                     label="Route"
-                     placeholder="Select route"
-                     data={["Oral", "Intravenous", "Topical", "Rectal"]}
+                     label="Symptoms"
+                     placeholder="Pick symptoms"
+                     data={symptoms}
                      className="w-full"
                   />
 
-                  <Select
-                     {...form.getInputProps(`prescription.medicines.${index}.type`)}
+                  <MultiSelect
+                     {...form.getInputProps("tests")}
+                     label="Tests"
+                     placeholder="Pick tests"
+                     data={tests}
+                     className="w-full"
+                  />
+
+                  <TextInput
+                     {...form.getInputProps("diagnosis")}
                      withAsterisk
-                     label="Type"
-                     placeholder="Select type"
-                     data={["Tablet", "Syrup", "Injection", "Capsule", "Ointment"]}
+                     label="Diagnosis"
+                     placeholder="Enter diagnosis"
                      className="w-full"
                   />
                   <TextInput
-                     {...form.getInputProps(`prescription.medicines.${index}.instructions`)}
-                     withAsterisk
-                     label="Instructions"
-                     placeholder="Enter instructions"
+                     {...form.getInputProps("referral")}
+                     label="Referral"
+                     placeholder="Enter referral details"
+                     className="w-full"
+                  />
+
+                  <Textarea
+                     {...form.getInputProps("notes")}
+                     label="Notes"
+                     placeholder="Enter any additional notes"
                      className="w-full"
                   />
                </Fieldset>
-            ))}
 
-            <div className="flex items-start col-span-2 justify-center w-full">
-               <Button onClick={insertMedicine} variant="outline" color="primary" className="col-span-2">
-                  Add Medicine
-               </Button>
-            </div>
-            <div className="flex items-center gap-5 justify-center w-full">
-               <Button loading={loading} type="submit" variant="filled" color="primary">
-                  Submit Report
-               </Button>
+               <Fieldset
+                  className="grid gap-5 w-full"
+                  legend={<span className="text-lg font-medium text-primary-500">Prescription</span>}
+                  radius="md"
+               >
+                  {form.values.prescription.medicines.map((_medicine, index) => (
+                     <Fieldset
+                        legend={
+                           <div className="flex items-center gap-5 w-full">
+                              <h1 className="text-lg font-medium">Medicine {index + 1}</h1>
+                              <ActionIcon
+                                 onClick={() => removeMedicine(index)}
+                                 variant="filled"
+                                 color="red"
+                                 size="md"
+                                 className="mb-2"
+                              >
+                                 <IconTrash />
+                              </ActionIcon>
+                           </div>
+                        }
+                        className="grid gap-4 grid-cols-2"
+                     >
+                        <TextInput
+                           {...form.getInputProps(`prescription.medicines.${index}.name`)}
+                           withAsterisk
+                           label="Medicine"
+                           placeholder="Enter medicine name"
+                           className="w-full"
+                        />
+                        <TextInput
+                           {...form.getInputProps(`prescription.medicines.${index}.dosage`)}
+                           withAsterisk
+                           label="Dosage"
+                           placeholder="Enter dosage"
+                           className="w-full"
+                        />
+                        <Select
+                           {...form.getInputProps(`prescription.medicines.${index}.frequency`)}
+                           withAsterisk
+                           label="Frequency"
+                           placeholder="Enter frequency"
+                           data={dosageFrequencies}
+                           className="w-full"
+                        />
+                        <NumberInput
+                           {...form.getInputProps(`prescription.medicines.${index}.duration`)}
+                           withAsterisk
+                           label="Duration (days)"
+                           placeholder="Enter duration in days"
+                           className="w-full"
+                        />
+                        <Select
+                           {...form.getInputProps(`prescription.medicines.${index}.route`)}
+                           withAsterisk
+                           label="Route"
+                           placeholder="Select route"
+                           data={["Oral", "Intravenous", "Topical", "Rectal"]}
+                           className="w-full"
+                        />
 
-               <Button loading={loading} variant="filled" color="red">
-                  Cancel
-               </Button>
-            </div>
-         </Fieldset>
-      </form>
+                        <Select
+                           {...form.getInputProps(`prescription.medicines.${index}.type`)}
+                           withAsterisk
+                           label="Type"
+                           placeholder="Select type"
+                           data={["Tablet", "Syrup", "Injection", "Capsule", "Ointment"]}
+                           className="w-full"
+                        />
+                        <TextInput
+                           {...form.getInputProps(`prescription.medicines.${index}.instructions`)}
+                           withAsterisk
+                           label="Instructions"
+                           placeholder="Enter instructions"
+                           className="w-full"
+                        />
+                     </Fieldset>
+                  ))}
+
+                  <div className="flex items-start col-span-2 justify-center w-full">
+                     <Button onClick={insertMedicine} variant="outline" color="primary" className="col-span-2">
+                        Add Medicine
+                     </Button>
+                  </div>
+                  <div className="flex items-center gap-5 justify-center w-full">
+                     <Button loading={loading} type="submit" variant="filled" color="primary">
+                        Submit Report
+                     </Button>
+
+                     <Button loading={loading} variant="filled" color="red">
+                        Cancel
+                     </Button>
+                  </div>
+               </Fieldset>
+            </form>
+         )}
+      </div>
    );
 };
 

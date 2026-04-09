@@ -14,7 +14,6 @@ const AppointmentDetails = () => {
    useEffect(() => {
       getAppointmentDetails(id)
          .then((res) => {
-            console.log("Appointment details fetched successfully:", res);
             setAppointment(res);
          })
          .catch((err) => {
