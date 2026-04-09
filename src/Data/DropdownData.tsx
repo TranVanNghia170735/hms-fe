@@ -112,4 +112,26 @@ const tests = [
    "COVID-19 Test",
 ];
 
-export { appointmentReasons, bloodGroup, BloodGroupData, DoctorDepartments, DoctorSpecializations, symptoms, tests };
+const dosageFrequencies = [
+   "1-0-0", // Morning
+   "0-1-0", // Afternoon
+   "0-0-1", // Night only
+   "1-1-0", // Morning and Afternoon
+   "1-0-1", // Morning and Night
+   "0-1-1", // Afternoon and Night
+   "1-1-1", // Morning, Afternoon, and Night
+   "0-0-0", // None (used to skip)
+   "1-0-0.5", // Morning and half night
+   "1-0-0 (SOS)", //Moring if needed
+   "1-0-1 (Alt Day)",
+];
+export {
+   appointmentReasons,
+   bloodGroup,
+   BloodGroupData,
+   DoctorDepartments,
+   DoctorSpecializations,
+   dosageFrequencies,
+   symptoms,
+   tests,
+};

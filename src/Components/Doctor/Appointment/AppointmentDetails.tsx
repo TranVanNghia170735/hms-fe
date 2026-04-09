@@ -84,7 +84,7 @@ const AppointmentDetails = () => {
             <Tabs.Panel value="prescriptions">Prescriptions</Tabs.Panel>
 
             <Tabs.Panel value="reports">
-               <ApReport />
+               <ApReport appointment={appointment} />
             </Tabs.Panel>
          </Tabs>
       </div>
