@@ -202,8 +202,6 @@ export default function Appointment() {
       );
    };
 
-   const header = renderHeader();
-
    const handleSubmit = (values: any) => {
       setLoading(true);
       const payload = {

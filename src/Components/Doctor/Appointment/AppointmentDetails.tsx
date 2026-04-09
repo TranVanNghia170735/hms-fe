@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { getAppointmentDetails } from "../../../Service/AppointmentService";
 import { formatDateWithTime } from "../../../Utility/DateUtility";
 import ApReport from "./ApReport";
+import Prescriptions from "./Prescriptions";
 
 const AppointmentDetails = () => {
    const { id } = useParams();
@@ -19,7 +20,7 @@ const AppointmentDetails = () => {
          .catch((err) => {
             console.log("Error fetching appointment details:", err);
          });
-   }, []);
+   }, [id]);
 
    return (
       <div>
@@ -81,7 +82,9 @@ const AppointmentDetails = () => {
             <Divider my="md" />
             <Tabs.Panel value="medical">Medical</Tabs.Panel>
 
-            <Tabs.Panel value="prescriptions">Prescriptions</Tabs.Panel>
+            <Tabs.Panel value="prescriptions">
+               <Prescriptions appointment={appointment} />
+            </Tabs.Panel>
 
             <Tabs.Panel value="reports">
                <ApReport appointment={appointment} />
