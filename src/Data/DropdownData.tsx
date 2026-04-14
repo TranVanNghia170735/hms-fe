@@ -125,6 +125,32 @@ const dosageFrequencies = [
    "1-0-0 (SOS)", //Moring if needed
    "1-0-1 (Alt Day)",
 ];
+
+const medicineCategories = [
+   { value: "ANTIBIOTIC", label: "Antibiotic" },
+   { value: "ANALGESIC", label: "Analgesic" },
+   { value: "ANTIHISTAMINE", label: "Antihistamine" },
+   { value: "ANTISEPTIC", label: "Antiseptic" },
+   { value: "VITAMIN", label: "Vitamin" },
+   { value: "MINERAL", label: "Mineral" },
+   { value: "HERBAL", label: "Herbal" },
+   { value: "HOMEOPATHIC", label: "Homeopathic" },
+   { value: "OTHER", label: "Other" },
+];
+
+const medicineTypes = [
+   { value: "SYRUP", label: "Syrup" },
+   { value: "TABLE", label: "Table" },
+   { value: "CAPSULE", label: "Capsule" },
+   { value: "INJECTION", label: "Injection" },
+   { value: "OINTMENT", label: "Ointment" },
+   { value: "LIQUID", label: "Liquid" },
+   { value: "POWDER", label: "Powder" },
+   { value: "CREAM", label: "Cream" },
+   { value: "SPRAY", label: "Spray" },
+   { value: "DROPS", label: "Drops" },
+];
+
 export {
    appointmentReasons,
    bloodGroup,
@@ -132,6 +158,8 @@ export {
    DoctorDepartments,
    DoctorSpecializations,
    dosageFrequencies,
+   medicineCategories,
+   medicineTypes,
    symptoms,
    tests,
 };

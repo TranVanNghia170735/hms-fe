@@ -1,0 +1,287 @@
+import { ActionIcon, Button, Fieldset, NumberInput, Select, TextInput } from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { IconEdit, IconSearch } from "@tabler/icons-react";
+import { FilterMatchMode } from "primereact/api";
+import { Column } from "primereact/column";
+import { DataTable, DataTableFilterMeta } from "primereact/datatable";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { medicineCategories, medicineTypes } from "../../../Data/DropdownData";
+import { addMedicine, getAllMedicines, updateMedicine } from "../../../Service/MedicineService";
+import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
+import { capitalizeFirstLetter } from "../../../Utility/OtherUtility";
+
+type Medicine = {
+   name: string;
+   medicineId?: number;
+   dosage: string;
+   frequency: string;
+   duration: number;
+   route: string;
+   type: string;
+   instructions: string;
+   prescriptionId?: string;
+};
+
+const Medicine = () => {
+   const navigate = useNavigate();
+   const [data, setData] = useState<any[]>([]);
+   const [edit, setEdit] = useState<boolean>(true);
+   const [filters, setFilters] = useState<DataTableFilterMeta>({
+      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+   });
+   const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
+   const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      let _filters: any = { ...filters };
+
+      _filters["global"].value = value;
+      setFilters(_filters);
+      setGlobalFilterValue(value);
+   };
+
+   const [loading, setLoading] = useState(false);
+   //  useEffect(() => {
+   //     fetchData();
+   //  }, [appointment.id, appointment?.patientId]);
+
+   //  const fetchData = () => {
+   //     if (!appointment?.patientId) return;
+   //     getReportsByPatientId(appointment?.patientId)
+   //        .then((res) => {
+   //           setData(res);
+   //        })
+   //        .catch((err) => {
+   //           console.log("Error fetching reports:", err);
+   //        });
+   //     isReportExists(appointment.id)
+   //        .then((res) => {
+   //           setAllowAdd(!res);
+   //        })
+   //        .catch((err) => {
+   //           setAllowAdd(true);
+   //           setEdit(true);
+   //        });
+   //  };
+
+   const form = useForm({
+      initialValues: {
+         id: null,
+         name: "",
+         dosage: "",
+         category: "",
+         type: "",
+         manufacturer: "",
+         unitPrice: "",
+      },
+      validate: {
+         name: (value: any) => (value ? null : "Name is required"),
+         dosage: (value: any) => (value ? null : "Dosage is required"),
+         category: (value: any) => (value ? null : "Category is required"),
+         type: (value: any) => (value ? null : "Type is required"),
+         manufacturer: (value: any) => (value ? null : "Manufacturer is required"),
+         unitPrice: (value: any) => (value ? null : "Unit price is required"),
+      },
+   });
+
+   const insertMedicine = (medicine: any) => {
+      form.insertListItem("prescription.medicines", {
+         name: "",
+         dosage: "",
+         frequency: "",
+         duration: 0,
+         route: "",
+         type: "",
+         instructions: "",
+      });
+   };
+
+   useEffect(() => {
+      fetchData();
+   }, []);
+
+   const fetchData = () => {
+      getAllMedicines()
+         .then((res) => {
+            setData(res);
+         })
+         .catch((err) => {
+            console.log("Error fetching medicines:", err);
+         });
+   };
+
+   const handleSubmit = (values: any) => {
+      let method;
+      let update = false;
+
+      if (values.id) {
+         update = true;
+         method = updateMedicine;
+      } else {
+         method = addMedicine;
+      }
+      setLoading(true);
+      method(values)
+         .then((res) => {
+            successNotification(`Medicine ${update ? "updated" : "added"} successfully`);
+            form.reset();
+            setEdit(false);
+            fetchData();
+         })
+         .catch((err) => {
+            errorNotification(err?.response?.data?.errorMessage || `Failed to ${update ? "update" : "add"} medicine`);
+         })
+         .finally(() => {
+            setLoading(false);
+         });
+   };
+
+   const renderHeader = () => {
+      return (
+         <div className="flex flex-wrap gap-2 justify-between items-center">
+            <Button variant="filled" onClick={() => setEdit(true)}>
+               Add Medicine
+            </Button>
+
+            <TextInput
+               leftSection={<IconSearch />}
+               fw={500}
+               value={globalFilterValue}
+               onChange={onGlobalFilterChange}
+               placeholder="Keyword Search"
+            />
+         </div>
+      );
+   };
+
+   const header = renderHeader();
+
+   const actionBodyTemplate = (rowData: any) => {
+      return (
+         <div className="flex gap-2">
+            <ActionIcon onClick={() => onEdit(rowData)}>
+               <IconEdit size={20} stroke={1.5} />
+            </ActionIcon>
+         </div>
+      );
+   };
+
+   const onEdit = (rowData: any) => {
+      setEdit(true);
+      form.setValues({
+         ...rowData,
+         name: rowData.name,
+         dosage: rowData.dosage,
+         category: rowData.category,
+         type: rowData.type,
+         manufacturer: rowData.manufacturer,
+         unitPrice: rowData.unitPrice,
+      });
+   };
+
+   const cancelButton = () => {
+      form.reset();
+      setEdit(false);
+   };
+
+   return (
+      <div>
+         {!edit ? (
+            <DataTable
+               stripedRows
+               value={data}
+               size="small"
+               paginator
+               header={header}
+               rows={10}
+               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+               rowsPerPageOptions={[10, 25, 50]}
+               dataKey="id"
+               filters={filters}
+               filterDisplay="menu"
+               globalFilterFields={["doctorName", "notes"]}
+               emptyMessage="No appointment found."
+               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            >
+               <Column field="name" header="Name" />
+
+               <Column field="dosage" header="Dosage" />
+
+               <Column field="category" header="Category" body={(rowData) => capitalizeFirstLetter(rowData.category)} />
+               <Column field="type" header="Type" body={(rowData) => capitalizeFirstLetter(rowData.type)} />
+               <Column field="manufacturer" header="Manufacturer" />
+               <Column field="unitPrice" header="Unit Price" sortable />
+               <Column
+                  headerStyle={{ textAlign: "center" }}
+                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                  body={actionBodyTemplate}
+               />
+            </DataTable>
+         ) : (
+            <form className="grid gap-5" onSubmit={form.onSubmit(handleSubmit)}>
+               <Fieldset
+                  className="grid gap-4 grid-cols-1"
+                  legend={<span className="text-lg font-medium text-primary-500">Medicine information</span>}
+                  radius="md"
+               >
+                  <TextInput
+                     {...form.getInputProps("name")}
+                     withAsterisk
+                     label="Medicine"
+                     placeholder="Enter medicine name"
+                     className="w-full"
+                  />
+                  <TextInput
+                     {...form.getInputProps("dosage")}
+                     label="Dosage"
+                     placeholder="Enter dosage (50mg, 100mg, etc...)"
+                     className="w-full"
+                  />
+
+                  <Select
+                     {...form.getInputProps("category")}
+                     label="Category "
+                     placeholder="Select category"
+                     className="w-full"
+                     data={medicineCategories}
+                  />
+
+                  <Select
+                     {...form.getInputProps("type")}
+                     label="Type "
+                     className="w-full"
+                     placeholder="Select type"
+                     data={medicineTypes}
+                  />
+                  <TextInput
+                     {...form.getInputProps("manufacturer")}
+                     label="Manufacturer"
+                     placeholder="Enter manufacturer"
+                     className="w-full"
+                  />
+                  <NumberInput
+                     {...form.getInputProps("unitPrice")}
+                     label="Unit Price"
+                     placeholder="Enter unit price"
+                     className="w-full"
+                     min={0}
+                     clampBehavior="strict"
+                  />
+               </Fieldset>
+
+               <div className="flex items-center gap-5 justify-center w-full">
+                  <Button loading={loading} type="submit" variant="filled" color="primary">
+                     {form.values.id ? "Update Medicine" : "Add Medicine"}
+                  </Button>
+
+                  <Button loading={loading} variant="filled" color="red" onClick={cancelButton}>
+                     Cancel
+                  </Button>
+               </div>
+            </form>
+         )}
+      </div>
+   );
+};
+
+export default Medicine;

@@ -10,7 +10,6 @@ const getPatient = async (patientId: string) => {
 };
 
 const updatePatient = async (patient: any) => {
-   console.log("TEST", patient);
    return axiosInstance
       .put("/profile/patient/update", patient)
       .then((response: any) => response.data)

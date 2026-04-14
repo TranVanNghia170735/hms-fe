@@ -2,10 +2,12 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
 import DoctorDashboard from "../Layout/DoctorDashboard";
 import PatientDashboard from "../Layout/PatientDashboard";
+import AdminMedicinePage from "../Pages/Admin/AdminMedicinePage";
 import DoctorAppointmentDetailsPage from "../Pages/Doctor/DoctorAppointmentDetailsPage";
 import DoctorAppointmentPage from "../Pages/Doctor/DoctorAppointmentPage";
 import DoctorProfilePage from "../Pages/Doctor/DoctorProfilePage";
 import LoginPage from "../Pages/LoginPage";
+import NotFoundPage from "../Pages/NotFoundPage";
 import PatientAppointmentPage from "../Pages/Patient/PatientAppointmentPage";
 import PatientProfilePage from "../Pages/Patient/PatientProfilePage";
 import RegisterPage from "../Pages/RegisterPage";
@@ -33,18 +35,19 @@ const AppRoutes = () => {
                }
             />
             <Route
-               path="/"
+               path="/admin"
                element={
                   <ProtectedRoutes>
                      <AdminDashboard />
                   </ProtectedRoutes>
                }
             >
-               <Route path="/dashboard" element={<div>Random</div>} />
-               <Route path="/pharmacy" element={<div>Random</div>} />
-               <Route path="/patients" element={<div>Random</div>} />
-               <Route path="/appointments" element={<div>Random</div>} />
-               <Route path="/doctors" element={<div>Random</div>} />
+               <Route path="dashboard" element={<div>Random</div>} />
+               <Route path="medicine" element={<AdminMedicinePage />} />
+               <Route path="inventory" element={<div>Random</div>} />
+               <Route path="sales" element={<div>Random</div>} />
+               <Route path="patients" element={<div>Random</div>} />
+               <Route path="doctors" element={<div>Random</div>} />
             </Route>
 
             {/* Doctor */}
@@ -77,6 +80,7 @@ const AppRoutes = () => {
                <Route path="profile" element={<PatientProfilePage />} />
                <Route path="appointments" element={<PatientAppointmentPage />} />
             </Route>
+            <Route path="*" element={<NotFoundPage />} />
          </Routes>
       </BrowserRouter>
    );
