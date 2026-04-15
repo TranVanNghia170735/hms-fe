@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
 import DoctorDashboard from "../Layout/DoctorDashboard";
 import PatientDashboard from "../Layout/PatientDashboard";
+import AdminInventoryPage from "../Pages/Admin/AdminInventoryPage";
 import AdminMedicinePage from "../Pages/Admin/AdminMedicinePage";
 import DoctorAppointmentDetailsPage from "../Pages/Doctor/DoctorAppointmentDetailsPage";
 import DoctorAppointmentPage from "../Pages/Doctor/DoctorAppointmentPage";
@@ -44,7 +45,7 @@ const AppRoutes = () => {
             >
                <Route path="dashboard" element={<div>Random</div>} />
                <Route path="medicine" element={<AdminMedicinePage />} />
-               <Route path="inventory" element={<div>Random</div>} />
+               <Route path="inventory" element={<AdminInventoryPage />} />
                <Route path="sales" element={<div>Random</div>} />
                <Route path="patients" element={<div>Random</div>} />
                <Route path="doctors" element={<div>Random</div>} />

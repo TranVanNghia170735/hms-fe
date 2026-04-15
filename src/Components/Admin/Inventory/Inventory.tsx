@@ -1,35 +1,34 @@
-import { ActionIcon, Button, Fieldset, NumberInput, Select, TextInput } from "@mantine/core";
+import {
+   ActionIcon,
+   Badge,
+   Button,
+   CheckIcon,
+   Fieldset,
+   Group,
+   NumberInput,
+   Select,
+   SelectProps,
+   TextInput,
+} from "@mantine/core";
+import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { IconEdit, IconSearch } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { medicineCategories, medicineTypes } from "../../../Data/DropdownData";
-import { addMedicine, getAllMedicines, updateMedicine } from "../../../Service/MedicineService";
+import { addStock, getAllStock, updateStock } from "../../../Service/InventoryService";
+import { getAllMedicines } from "../../../Service/MedicineService";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
-import { capitalizeFirstLetter } from "../../../Utility/OtherUtility";
 
-type Medicine = {
-   name: string;
-   medicineId?: number;
-   dosage: string;
-   frequency: string;
-   duration: number;
-   route: string;
-   type: string;
-   instructions: string;
-   prescriptionId?: string;
-};
-
-const Medicine = () => {
-   const navigate = useNavigate();
+const Inventory = () => {
    const [data, setData] = useState<any[]>([]);
+   const [medicine, setMedicine] = useState<any[]>([]);
    const [edit, setEdit] = useState<boolean>(true);
    const [filters, setFilters] = useState<DataTableFilterMeta>({
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
    });
+   const [medicineMap, setMedicineMap] = useState<Record<string, any>>({});
    const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -41,72 +40,47 @@ const Medicine = () => {
    };
 
    const [loading, setLoading] = useState(false);
-   //  useEffect(() => {
-   //     fetchData();
-   //  }, [appointment.id, appointment?.patientId]);
-
-   //  const fetchData = () => {
-   //     if (!appointment?.patientId) return;
-   //     getReportsByPatientId(appointment?.patientId)
-   //        .then((res) => {
-   //           setData(res);
-   //        })
-   //        .catch((err) => {
-   //           console.log("Error fetching reports:", err);
-   //        });
-   //     isReportExists(appointment.id)
-   //        .then((res) => {
-   //           setAllowAdd(!res);
-   //        })
-   //        .catch((err) => {
-   //           setAllowAdd(true);
-   //           setEdit(true);
-   //        });
-   //  };
 
    const form = useForm({
       initialValues: {
          id: null,
-         name: "",
-         dosage: "",
-         category: "",
-         type: "",
-         manufacturer: "",
-         unitPrice: "",
+         medicineId: "",
+         batchNo: "",
+         quantity: 0,
+         expiryDate: "",
       },
       validate: {
-         name: (value: any) => (value ? null : "Name is required"),
-         dosage: (value: any) => (value ? null : "Dosage is required"),
-         category: (value: any) => (value ? null : "Category is required"),
-         type: (value: any) => (value ? null : "Type is required"),
-         manufacturer: (value: any) => (value ? null : "Manufacturer is required"),
-         unitPrice: (value: any) => (value ? null : "Unit price is required"),
+         medicineId: (value: any) => (value ? null : "Medicine ID is required"),
+         batchNo: (value: any) => (value ? null : "Batch number is required"),
+         quantity: (value: any) => (value > 0 ? null : "Quantity must be positive"),
+         expiryDate: (value: any) => (value ? null : "Expiry date is required"),
       },
    });
 
-   const insertMedicine = (medicine: any) => {
-      form.insertListItem("prescription.medicines", {
-         name: "",
-         dosage: "",
-         frequency: "",
-         duration: 0,
-         route: "",
-         type: "",
-         instructions: "",
-      });
-   };
-
    useEffect(() => {
+      getAllMedicines()
+         .then((res) => {
+            setMedicine(res);
+            setMedicineMap(
+               res.reduce((acc: any, item: any) => {
+                  acc[String(item.id)] = item;
+                  return acc;
+               }, {}),
+            );
+         })
+         .catch((err) => {
+            console.log("Error fetching medicines:", err);
+         });
       fetchData();
    }, []);
 
    const fetchData = () => {
-      getAllMedicines()
+      getAllStock()
          .then((res) => {
             setData(res);
          })
          .catch((err) => {
-            console.log("Error fetching medicines:", err);
+            console.log("Error fetching stocks:", err);
          });
    };
 
@@ -116,20 +90,20 @@ const Medicine = () => {
 
       if (values.id) {
          update = true;
-         method = updateMedicine;
+         method = updateStock;
       } else {
-         method = addMedicine;
+         method = addStock;
       }
       setLoading(true);
       method(values)
          .then((res) => {
-            successNotification(`Medicine ${update ? "updated" : "added"} successfully`);
+            successNotification(`Stock ${update ? "updated" : "added"} successfully`);
             form.reset();
             setEdit(false);
             fetchData();
          })
          .catch((err) => {
-            errorNotification(err?.response?.data?.errorMessage || `Failed to ${update ? "update" : "add"} medicine`);
+            errorNotification(err?.response?.data?.errorMessage || `Failed to ${update ? "update" : "add"} stock`);
          })
          .finally(() => {
             setLoading(false);
@@ -140,7 +114,7 @@ const Medicine = () => {
       return (
          <div className="flex flex-wrap gap-2 justify-between items-center">
             <Button variant="filled" onClick={() => setEdit(true)}>
-               Add Medicine
+               Add Stock
             </Button>
 
             <TextInput
@@ -167,21 +141,37 @@ const Medicine = () => {
    };
 
    const onEdit = (rowData: any) => {
+      console.log("Nghiatv8 test", medicineMap["" + rowData.medicineId]?.name);
       setEdit(true);
       form.setValues({
          ...rowData,
-         name: rowData.name,
-         dosage: rowData.dosage,
-         category: rowData.category,
-         type: rowData.type,
-         manufacturer: rowData.manufacturer,
-         unitPrice: rowData.unitPrice,
+         medicineId: String(rowData.medicineId),
+         batchNo: rowData.batchNo,
+         quantity: rowData.quantity,
+         expiryDate: new Date(rowData.expiryDate),
       });
    };
 
    const cancelButton = () => {
       form.reset();
       setEdit(false);
+   };
+
+   const renderSelectOption: SelectProps["renderOption"] = ({ option, checked }: any) => (
+      <Group flex="1" gap="xs">
+         <div className="flex gap-5 items-center">
+            {option.label}
+            {option?.manufacturer && (
+               <span style={{ marginLeft: "auto", fontSize: "0.8em", color: "gray" }}>{option.manufacturer}</span>
+            )}
+         </div>
+         {checked && <CheckIcon style={{ marginInlineStart: "auto" }} />}
+      </Group>
+   );
+
+   const statusBody = (rowData: any) => {
+      const isExpired = new Date(rowData.expiryDate) < new Date();
+      return <Badge color={isExpired ? "red" : "green"}>{isExpired ? "Expired" : "Active"}</Badge>;
    };
 
    return (
@@ -203,14 +193,24 @@ const Medicine = () => {
                emptyMessage="No appointment found."
                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
             >
-               <Column field="name" header="Name" />
+               <Column
+                  field="name"
+                  header="Medicine"
+                  body={(rowData: any) => (
+                     <span>
+                        {medicineMap["" + rowData.medicineId]?.name}
+                        <span className="text-xs text-gray-600">
+                           {medicineMap["" + rowData.medicineId]?.manufacturer}
+                        </span>
+                     </span>
+                  )}
+               />
 
-               <Column field="dosage" header="Dosage" />
-               <Column field="stock" header="Stock" />
-               <Column field="category" header="Category" body={(rowData) => capitalizeFirstLetter(rowData.category)} />
-               <Column field="type" header="Type" body={(rowData) => capitalizeFirstLetter(rowData.type)} />
-               <Column field="manufacturer" header="Manufacturer" />
-               <Column field="unitPrice" header="Unit Price" sortable />
+               <Column field="batchNo" header="Batch No." />
+               <Column field="initialQuantity" header="Quantity" />
+               <Column field="quantity" header="Remaining Quantity" />
+               <Column field="expiryDate" header="Expiry Date" />
+               <Column field="status" header="Status" sortable body={statusBody} />
                <Column
                   headerStyle={{ textAlign: "center" }}
                   bodyStyle={{ textAlign: "center", overflow: "visible" }}
@@ -224,54 +224,47 @@ const Medicine = () => {
                   legend={<span className="text-lg font-medium text-primary-500">Medicine information</span>}
                   radius="md"
                >
+                  <Select
+                     renderOption={renderSelectOption}
+                     {...form.getInputProps("medicineId")}
+                     label="Medicine "
+                     placeholder="Select medicine"
+                     className="w-full"
+                     data={medicine.map((item) => ({
+                        ...item,
+                        value: "" + item.id,
+                        label: item.name,
+                     }))}
+                  />
                   <TextInput
-                     {...form.getInputProps("name")}
+                     {...form.getInputProps("batchNo")}
                      withAsterisk
-                     label="Medicine"
-                     placeholder="Enter medicine name"
-                     className="w-full"
-                  />
-                  <TextInput
-                     {...form.getInputProps("dosage")}
-                     label="Dosage"
-                     placeholder="Enter dosage (50mg, 100mg, etc...)"
-                     className="w-full"
-                  />
-
-                  <Select
-                     {...form.getInputProps("category")}
-                     label="Category "
-                     placeholder="Select category"
-                     className="w-full"
-                     data={medicineCategories}
-                  />
-
-                  <Select
-                     {...form.getInputProps("type")}
-                     label="Type "
-                     className="w-full"
-                     placeholder="Select type"
-                     data={medicineTypes}
-                  />
-                  <TextInput
-                     {...form.getInputProps("manufacturer")}
-                     label="Manufacturer"
-                     placeholder="Enter manufacturer"
+                     label="Batch No"
+                     placeholder="Enter batch number"
                      className="w-full"
                   />
                   <NumberInput
-                     {...form.getInputProps("unitPrice")}
-                     label="Unit Price"
-                     placeholder="Enter unit price"
+                     {...form.getInputProps("quantity")}
+                     label="Quantity"
+                     placeholder="Enter quantity"
                      className="w-full"
                      min={0}
                      clampBehavior="strict"
+                  />
+
+                  <DateInput
+                     {...form.getInputProps("expiryDate")}
+                     label="Expiry Date"
+                     placeholder="Enter expiry date"
+                     className="w-full"
+                     withAsterisk
+                     minDate={new Date()}
                   />
                </Fieldset>
 
                <div className="flex items-center gap-5 justify-center w-full">
                   <Button loading={loading} type="submit" variant="filled" color="primary">
-                     {form.values.id ? "Update Medicine" : "Add Medicine"}
+                     {form.values.id ? "Update Stock" : "Add Stock"}
                   </Button>
 
                   <Button loading={loading} variant="filled" color="red" onClick={cancelButton}>
@@ -284,4 +277,4 @@ const Medicine = () => {
    );
 };
 
-export default Medicine;
+export default Inventory;
