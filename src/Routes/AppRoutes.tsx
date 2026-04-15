@@ -4,6 +4,7 @@ import DoctorDashboard from "../Layout/DoctorDashboard";
 import PatientDashboard from "../Layout/PatientDashboard";
 import AdminInventoryPage from "../Pages/Admin/AdminInventoryPage";
 import AdminMedicinePage from "../Pages/Admin/AdminMedicinePage";
+import AdminSalesPage from "../Pages/Admin/AdminSalesPage";
 import DoctorAppointmentDetailsPage from "../Pages/Doctor/DoctorAppointmentDetailsPage";
 import DoctorAppointmentPage from "../Pages/Doctor/DoctorAppointmentPage";
 import DoctorProfilePage from "../Pages/Doctor/DoctorProfilePage";
@@ -46,7 +47,7 @@ const AppRoutes = () => {
                <Route path="dashboard" element={<div>Random</div>} />
                <Route path="medicine" element={<AdminMedicinePage />} />
                <Route path="inventory" element={<AdminInventoryPage />} />
-               <Route path="sales" element={<div>Random</div>} />
+               <Route path="sales" element={<AdminSalesPage />} />
                <Route path="patients" element={<div>Random</div>} />
                <Route path="doctors" element={<div>Random</div>} />
             </Route>
