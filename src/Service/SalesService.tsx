@@ -20,7 +20,7 @@ const getSales = async (id: any) => {
 
 const getAllSaleItems = async (id: any) => {
    return axiosInstance
-      .get(`/pharmacy/getSaleItems/getAll/${id}`)
+      .get(`/pharmacy/sales/getSaleItems/${id}`)
       .then((response: any) => response.data)
       .catch((error: any) => {
          throw error;
@@ -36,4 +36,13 @@ const updateSale = async (data: any) => {
       });
 };
 
-export { addSales, getAllSaleItems, getSales, updateSale };
+const getAllSales = async () => {
+   return axiosInstance
+      .get("/pharmacy/sales/getAll")
+      .then((response: any) => response.data)
+      .catch((error: any) => {
+         throw error;
+      });
+};
+
+export { addSales, getAllSaleItems, getAllSales, getSales, updateSale };

@@ -1,28 +1,36 @@
 import {
    ActionIcon,
-   Badge,
    Button,
+   Card,
    CheckIcon,
+   Divider,
    Fieldset,
+   Grid,
    Group,
+   LoadingOverlay,
+   Modal,
    NumberInput,
    Select,
    SelectProps,
+   Text,
    TextInput,
+   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconEdit, IconPlus, IconSearch, IconTrack } from "@tabler/icons-react";
+import { useDisclosure } from "@mantine/hooks";
+import { IconEye, IconPlus, IconSearch, IconTrack } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
 import { getAllMedicines } from "../../../Service/MedicineService";
-import { addSales } from "../../../Service/SalesService";
+import { addSales, getAllSaleItems, getAllSales } from "../../../Service/SalesService";
+import { formatDate } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
 
 interface SaleItem {
    medicineId: string;
-   quantity: number;
+   quantity: number | undefined;
 }
 
 const Sales = () => {
@@ -44,10 +52,14 @@ const Sales = () => {
    };
 
    const [loading, setLoading] = useState(false);
+   const [opened, { open, close }] = useDisclosure(false);
+   const [saleItems, setSaleItems] = useState<any[]>([]);
 
    const form = useForm({
       initialValues: {
-         saleItems: [{ medicineId: "", quantity: 0 }] as SaleItem[],
+         buyerName: "",
+         buyerContact: "",
+         saleItems: [{ medicineId: "", quantity: undefined }] as SaleItem[],
       },
 
       validate: {
@@ -76,34 +88,52 @@ const Sales = () => {
    }, []);
 
    const fetchData = () => {
-      // getAllStock()
-      //    .then((res) => {
-      //       setData(res);
-      //    })
-      //    .catch((err) => {
-      //       console.log("Error fetching stocks:", err);
-      //    });
+      getAllSales()
+         .then((res) => {
+            setData(res);
+         })
+         .catch((err) => {
+            console.log("Error fetching sales:", err);
+         });
    };
 
    const handleSubmit = (values: any) => {
-      let update = false;
+      const saleItems = values.saleItems.map((x: any) => ({
+         ...x,
+         unitPrice: medicineMap[x.medicineId]?.unitPrice,
+      }));
 
+      const totalAmount = saleItems.reduce((acc: number, item: any) => acc + item.unitPrice * item.quantity, 0);
       setLoading(true);
-      addSales(values)
+      addSales({ ...values, saleItems, totalAmount })
          .then((res: any) => {
-            successNotification(`Stock ${update ? "updated" : "added"} successfully`);
+            successNotification(`Medicine sold successfully`);
             form.reset();
             setEdit(false);
             fetchData();
          })
          .catch((err: any) => {
-            errorNotification(err?.response?.data?.errorMessage || `Failed to ${update ? "update" : "add"} stock`);
+            errorNotification(err?.response?.data?.errorMessage || `Failed to sold Medicine`);
          })
          .finally(() => {
             setLoading(false);
          });
    };
 
+   const handleDetail = (rowData: any) => {
+      open();
+      setLoading(true);
+      getAllSaleItems(rowData.id)
+         .then((res) => {
+            setSaleItems(res);
+         })
+         .catch((err) => {
+            console.error("Error fetching sale items:", err);
+         })
+         .finally(() => {
+            setLoading(false);
+         });
+   };
    const renderHeader = () => {
       return (
          <div className="flex flex-wrap gap-2 justify-between items-center">
@@ -131,22 +161,11 @@ const Sales = () => {
    const actionBodyTemplate = (rowData: any) => {
       return (
          <div className="flex gap-2">
-            <ActionIcon onClick={() => onEdit(rowData)}>
-               <IconEdit size={20} stroke={1.5} />
+            <ActionIcon onClick={() => handleDetail(rowData)}>
+               <IconEye size={20} stroke={1.5} />
             </ActionIcon>
          </div>
       );
-   };
-
-   const onEdit = (rowData: any) => {
-      setEdit(true);
-      form.setValues({
-         ...rowData,
-         medicineId: String(rowData.medicineId),
-         batchNo: rowData.batchNo,
-         quantity: rowData.quantity,
-         expiryDate: new Date(rowData.expiryDate),
-      });
    };
 
    const cancelButton = () => {
@@ -159,17 +178,14 @@ const Sales = () => {
          <div className="flex gap-5 items-center">
             {option.label}
             {option?.manufacturer && (
-               <span style={{ marginLeft: "auto", fontSize: "0.8em", color: "gray" }}>{option.manufacturer}</span>
+               <span style={{ marginLeft: "auto", fontSize: "0.8em", color: "gray" }}>
+                  {option.manufacturer} - {option.dosage}
+               </span>
             )}
          </div>
          {checked && <CheckIcon style={{ marginInlineStart: "auto" }} />}
       </Group>
    );
-
-   const statusBody = (rowData: any) => {
-      const isExpired = new Date(rowData.expiryDate) < new Date();
-      return <Badge color={isExpired ? "red" : "green"}>{isExpired ? "Expired" : "Active"}</Badge>;
-   };
 
    return (
       <>
@@ -180,6 +196,7 @@ const Sales = () => {
                size="small"
                paginator
                header={header}
+               removableSort
                rows={10}
                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                rowsPerPageOptions={[10, 25, 50]}
@@ -190,24 +207,10 @@ const Sales = () => {
                emptyMessage="No appointment found."
                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
             >
-               <Column
-                  field="name"
-                  header="Medicine"
-                  body={(rowData: any) => (
-                     <span>
-                        {medicineMap["" + rowData.medicineId]?.name}
-                        <span className="text-xs text-gray-600">
-                           {medicineMap["" + rowData.medicineId]?.manufacturer}
-                        </span>
-                     </span>
-                  )}
-               />
-
-               <Column field="batchNo" header="Batch No." />
-               <Column field="initialQuantity" header="Quantity" />
-               <Column field="quantity" header="Remaining Quantity" />
-               <Column field="expiryDate" header="Expiry Date" />
-               <Column field="status" header="Status" sortable body={statusBody} />
+               <Column field="buyerName" header="Buyer" />
+               <Column field="buyerContact" header="Contact" />
+               <Column field="totalAmount" header="Total Amount" sortable />
+               <Column field="saleDate" header="Sale Date" body={(rowData) => formatDate(rowData.saleData)} sortable />
                <Column
                   headerStyle={{ textAlign: "center" }}
                   bodyStyle={{ textAlign: "center", overflow: "visible" }}
@@ -216,6 +219,30 @@ const Sales = () => {
             </DataTable>
          ) : (
             <form className="grid gap-5" onSubmit={form.onSubmit(handleSubmit)}>
+               <LoadingOverlay visible={loading} />
+               <Fieldset
+                  className="grid gap-5 w-full"
+                  legend={<span className="text-lg font-medium text-primary-500">Buyer information</span>}
+                  radius="md"
+               >
+                  <div className="grid grid-cols-2 gap-5 w-full">
+                     <TextInput
+                        withAsterisk
+                        label="Buyer Name"
+                        placeholder="Enter buyer name"
+                        {...form.getInputProps("buyerName")}
+                        className="w-full"
+                     />
+                     <NumberInput
+                        maxLength={10}
+                        withAsterisk
+                        label="Contact Number"
+                        placeholder="Enter contact name"
+                        {...form.getInputProps("buyerContact")}
+                        className="w-full"
+                     />
+                  </div>
+               </Fieldset>
                <Fieldset
                   className="grid gap-5 w-full"
                   legend={<span className="text-lg font-medium text-primary-500">Medicine information</span>}
@@ -231,22 +258,34 @@ const Sales = () => {
                                  label="Medicine "
                                  placeholder="Select medicine"
                                  className="w-full"
-                                 data={medicine.map((item) => ({
-                                    ...item,
-                                    value: "" + item.id,
-                                    label: item.name,
-                                 }))}
+                                 data={medicine
+                                    .filter(
+                                       (x) =>
+                                          !form.values.saleItems.some(
+                                             (item1: any, idx) => item1.medicineId === x.id && idx !== index,
+                                          ),
+                                    )
+                                    .map((item) => ({
+                                       ...item,
+                                       value: "" + item.id,
+                                       label: item.name,
+                                    }))}
                               />
                            </div>
                            <div className="col-span-2 w-full">
                               <NumberInput
                                  {...form.getInputProps(`saleItems.${index}.quantity`)}
+                                 rightSectionWidth={80}
                                  label="Quantity"
                                  placeholder="Enter quantity"
                                  className="w-full"
                                  min={0}
-                                 max={50}
                                  clampBehavior="strict"
+                                 rightSection={
+                                    <div className="text-xs flex gap-1 text-white font-medium rounded-md bg-red-400 p-1">
+                                       Stock {medicineMap[item.medicineId]?.stock}
+                                    </div>
+                                 }
                               />
                            </div>
 
@@ -285,6 +324,49 @@ const Sales = () => {
                </div>
             </form>
          )}
+
+         <Modal opened={opened} size="xl" onClose={close} title="Sole Medicines" centered>
+            <div className="grid grid-cols-2 gap-5">
+               {saleItems.map((data: any, index: number) => (
+                  <Card shadow="md" radius="md" padding="lg" withBorder key={index}>
+                     <Title order={4} mb="sm">
+                        {medicineMap[data.medicinedId]?.name} - {medicineMap[data.medicineId]?.dosage}
+                        <span className="text-gray-600">{medicineMap[data.medicineId]?.manufacturer} </span>
+                     </Title>
+                     <Text size="xs">{data.batchNo}</Text>
+                     <Divider my="sm" />
+
+                     <Grid>
+                        <Grid.Col span={6}>
+                           <Text size="sm" fw={500}>
+                              Quantity:
+                           </Text>
+                           <Text>{data.quantity}</Text>
+                        </Grid.Col>
+
+                        <Grid.Col span={6}>
+                           <Text size="sm" fw={500}>
+                              Unit Price:
+                           </Text>
+                           <Text>{data.unitPrice}</Text>
+                        </Grid.Col>
+
+                        <Grid.Col span={6}>
+                           <Text size="sm" fw={500}>
+                              Total:
+                           </Text>
+                           <Text>$ {data.quantity * data.unitPrice}</Text>
+                        </Grid.Col>
+                     </Grid>
+                  </Card>
+               ))}
+            </div>
+            {saleItems.length === 0 && (
+               <Text color="dimmed" size="sm" mt="md">
+                  No medicines found for this prescription.
+               </Text>
+            )}
+         </Modal>
       </>
    );
 };
