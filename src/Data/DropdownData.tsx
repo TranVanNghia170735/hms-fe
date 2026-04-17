@@ -151,6 +151,20 @@ const medicineTypes = [
    { value: "DROPS", label: "Drops" },
 ];
 
+const freqMap: Record<string, number> = {
+   "1-0-0": 1,
+   "0-1-0": 1,
+   "0-0-1": 1,
+   "1-1-0": 2,
+   "1-0-1": 2,
+   "0-1-1": 2,
+   "1-1-1": 3,
+   "0-0-0": 0,
+   "1-0-0.5": 1.5,
+   "1-0-0 (SOS)": 0.5,
+   "1-0-1 (Alt Day)": 1,
+};
+
 export {
    appointmentReasons,
    bloodGroup,
@@ -158,6 +172,7 @@ export {
    DoctorDepartments,
    DoctorSpecializations,
    dosageFrequencies,
+   freqMap,
    medicineCategories,
    medicineTypes,
    symptoms,

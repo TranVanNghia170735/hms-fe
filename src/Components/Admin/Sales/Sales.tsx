@@ -24,6 +24,7 @@ import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
+import { freqMap } from "../../../Data/DropdownData";
 import { getAllPrescriptions, getMedicinesByPrescriptionId } from "../../../Service/AppointmentService";
 import { getAllMedicines } from "../../../Service/MedicineService";
 import { addSales, getAllSaleItems, getAllSales } from "../../../Service/SalesService";
@@ -69,7 +70,7 @@ const Sales = () => {
       validate: {
          saleItems: {
             medicineId: (value: any) => (value ? null : "Medicine ID is required"),
-            quantity: (value: any) => (value > 0 ? null : "Quantity must be positive"),
+            quantity: (value: any) => (value && Number(value) > 0 ? null : "Quantity must be positive"),
          },
       },
    });
@@ -111,7 +112,15 @@ const Sales = () => {
       getMedicinesByPrescriptionId(item.id)
          .then((res) => {
             setSaleItems(res);
-            console.log(res);
+            form.setValues({
+               buyerName: item.patientName,
+               saleItems: res
+                  .filter((x: any) => x.medicineId != null)
+                  .map((x: any) => ({
+                     medicineId: String(x.medicineId),
+                     quantity: calculateQuantity(x.frequency, x.duration),
+                  })),
+            });
          })
          .catch((err) => {
             console.log("Error fetching medicines", err);
@@ -119,6 +128,11 @@ const Sales = () => {
          .finally(() => {
             setLoading(false);
          });
+   };
+
+   const calculateQuantity = (freq: string, duration: number) => {
+      const freqValue = freqMap[freq] || 0;
+      return Math.ceil(freqValue * duration);
    };
 
    const fetchData = () => {
@@ -132,6 +146,19 @@ const Sales = () => {
    };
 
    const handleSubmit = (values: any) => {
+      let update = false;
+      let flag = false;
+      values.saleItems.forEach((item: any, index: number) => {
+         if (item.quantity > (medicineMap[item.medicineId]?.stock || 0)) {
+            flag = true;
+            form.setFieldError(`saleItems.${index}.quantity`, "Quantity exceeds available stock");
+         }
+      });
+
+      if (flag) {
+         errorNotification("Quantity exceeds available stock");
+         return;
+      }
       const saleItems = values.saleItems.map((x: any) => ({
          ...x,
          unitPrice: medicineMap[x.medicineId]?.unitPrice,
@@ -325,7 +352,7 @@ const Sales = () => {
                                     label="Quantity"
                                     placeholder="Enter quantity"
                                     className="w-full"
-                                    min={0}
+                                    min={1}
                                     clampBehavior="strict"
                                     rightSection={
                                        <div className="text-xs flex gap-1 text-white font-medium rounded-md bg-red-400 p-1">
