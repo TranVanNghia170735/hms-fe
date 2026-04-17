@@ -37,11 +37,13 @@ const Sales = () => {
    const [data, setData] = useState<any[]>([]);
    const [medicine, setMedicine] = useState<any[]>([]);
    const [edit, setEdit] = useState<boolean>(true);
+   const [loading, setLoading] = useState(false);
+   const [medicineMap, setMedicineMap] = useState<Record<string, any>>({});
+
+   const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
    const [filters, setFilters] = useState<DataTableFilterMeta>({
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
    });
-   const [medicineMap, setMedicineMap] = useState<Record<string, any>>({});
-   const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       let _filters: any = { ...filters };
@@ -51,7 +53,6 @@ const Sales = () => {
       setGlobalFilterValue(value);
    };
 
-   const [loading, setLoading] = useState(false);
    const [opened, { open, close }] = useDisclosure(false);
    const [saleItems, setSaleItems] = useState<any[]>([]);
 

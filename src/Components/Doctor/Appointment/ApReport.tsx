@@ -1,4 +1,16 @@
-import { ActionIcon, Button, Fieldset, MultiSelect, NumberInput, Select, Textarea, TextInput } from "@mantine/core";
+import {
+   ActionIcon,
+   Button,
+   CheckIcon,
+   Fieldset,
+   Group,
+   MultiSelect,
+   NumberInput,
+   Select,
+   SelectProps,
+   Textarea,
+   TextInput,
+} from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconEye, IconSearch, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
@@ -6,28 +18,28 @@ import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { dosageFrequencies, symptoms, tests } from "../../../Data/DropdownData";
+import { dosageFrequencies, medicineTypes, symptoms, tests } from "../../../Data/DropdownData";
 import { createAppointmentReport, getReportsByPatientId, isReportExists } from "../../../Service/AppointmentService";
+import { getAllMedicines } from "../../../Service/MedicineService";
 import { formatDate } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
 
 type Medicine = {
-   name: string;
-   medicineId?: number;
-   dosage: string;
-   frequency: string;
-   duration: number;
-   route: string;
-   type: string;
-   instructions: string;
-   prescriptionId?: string;
+   name: string | null;
+   medicineId?: string | number | undefined;
+   dosage: string | null;
+   frequency: string | null;
+   duration: number | null;
+   route: string | null;
+   type: string | null;
+   instructions: string | null;
+   prescriptionId?: string | null;
 };
 
 const ApReport = ({ appointment }: any) => {
    const navigate = useNavigate();
    const [data, setData] = useState<any[]>([]);
    const [allowAdd, setAllowAdd] = useState<boolean>(false);
-   const [edit, setEdit] = useState<boolean>(false);
    const [filters, setFilters] = useState<DataTableFilterMeta>({
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
    });
@@ -40,11 +52,30 @@ const ApReport = ({ appointment }: any) => {
       setFilters(_filters);
       setGlobalFilterValue(value);
    };
-
+   const [medicine, setMedicine] = useState<any[]>([]);
+   const [edit, setEdit] = useState<boolean>(true);
    const [loading, setLoading] = useState(false);
+   const [medicineMap, setMedicineMap] = useState<Record<string, any>>({});
+
    useEffect(() => {
       fetchData();
    }, [appointment.id, appointment?.patientId]);
+
+   useEffect(() => {
+      getAllMedicines()
+         .then((res) => {
+            setMedicine(res);
+            setMedicineMap(
+               res.reduce((acc: any, item: any) => {
+                  acc[String(item.id)] = item;
+                  return acc;
+               }, {}),
+            );
+         })
+         .catch((err) => {
+            console.log("Error fetching medicines:", err);
+         });
+   }, []);
 
    const fetchData = () => {
       if (!appointment?.patientId) return;
@@ -85,7 +116,7 @@ const ApReport = ({ appointment }: any) => {
                dosage: (value: any) => (value.trim() ? null : "Dosage is required"),
                frequency: (value: any) => (value.trim() ? null : "Frequency is required"),
                duration: (value: any) => (value > 0 ? null : "Duration must be greater than 0"),
-               route: (value: any) => (value ? null : "Route is required"),
+               // route: (value: any) => (value ? null : "Route is required"),
                type: (value: any) => (value ? null : "Type is required"),
                instructions: (value: any) => (value.trim() ? null : "Instructions are required"),
             },
@@ -117,7 +148,10 @@ const ApReport = ({ appointment }: any) => {
          patientId: appointment.patientId,
          appointmentId: appointment.id,
          prescription: {
-            ...values.prescription,
+            medicines: values.prescription.medicines.map((med) => ({
+               ...med,
+               medicineId: med.medicineId === "OTHER" ? null : med.medicineId,
+            })),
             doctorId: appointment.doctorId,
             patientId: appointment.patientId,
             appointmentId: appointment.id,
@@ -168,6 +202,34 @@ const ApReport = ({ appointment }: any) => {
             </ActionIcon>
          </div>
       );
+   };
+
+   const renderSelectOption: SelectProps["renderOption"] = ({ option, checked }: any) => (
+      <Group flex="1" gap="xs">
+         <div className="flex gap-5 items-center">
+            {option.label}
+            {option?.manufacturer && (
+               <span style={{ marginLeft: "auto", fontSize: "0.8em", color: "gray" }}>
+                  {option.manufacturer} - {option.dosage}
+               </span>
+            )}
+         </div>
+         {checked && <CheckIcon style={{ marginInlineStart: "auto" }} />}
+      </Group>
+   );
+
+   const handleChangeMed = (medId: any, index: number) => {
+      if (medId && medId !== "OTHER") {
+         form.setFieldValue(`prescription.medicines.${index}.medicineId`, medId);
+         form.setFieldValue(`prescription.medicines.${index}.name`, medicineMap[medId]?.name || "");
+         form.setFieldValue(`prescription.medicines.${index}.dosage`, medicineMap[medId]?.dosage || "");
+         form.setFieldValue(`prescription.medicines.${index}.type`, medicineMap[medId]?.type || "");
+      } else {
+         form.setFieldValue(`prescription.medicines.${index}.medicineId`, "OTHER");
+         form.setFieldValue(`prescription.medicines.${index}.name`, null);
+         form.setFieldValue(`prescription.medicines.${index}.dosage`, null);
+         form.setFieldValue(`prescription.medicines.${index}.type`, null);
+      }
    };
 
    return (
@@ -257,7 +319,7 @@ const ApReport = ({ appointment }: any) => {
                   legend={<span className="text-lg font-medium text-primary-500">Prescription</span>}
                   radius="md"
                >
-                  {form.values.prescription.medicines.map((_medicine, index) => (
+                  {form.values.prescription.medicines.map((med, index) => (
                      <Fieldset
                         legend={
                            <div className="flex items-center gap-5 w-full">
@@ -275,14 +337,41 @@ const ApReport = ({ appointment }: any) => {
                         }
                         className="grid gap-4 grid-cols-2"
                      >
-                        <TextInput
-                           {...form.getInputProps(`prescription.medicines.${index}.name`)}
-                           withAsterisk
-                           label="Medicine"
-                           placeholder="Enter medicine name"
+                        <Select
+                           renderOption={renderSelectOption}
+                           {...form.getInputProps(`prescription.medicines.${index}.medicineId`)}
+                           label="Medicine "
+                           placeholder="Select medicine"
                            className="w-full"
+                           data={[
+                              ...medicine
+                                 .filter(
+                                    (x: any) =>
+                                       !form.values.prescription.medicines.some(
+                                          (item1: any, idx) => item1.medicineId === x.id && idx !== index,
+                                       ),
+                                 )
+                                 .map((item) => ({
+                                    ...item,
+                                    value: "" + item.id,
+                                    label: item.name,
+                                 })),
+                              { label: "Other", value: "OTHER" },
+                           ]}
+                           onChange={(value: any) => handleChangeMed(value, index)}
+                           withAsterisk
                         />
+                        {med.medicineId === "OTHER" && (
+                           <TextInput
+                              {...form.getInputProps(`prescription.medicines.${index}.name`)}
+                              withAsterisk
+                              label="Medicine"
+                              placeholder="Enter medicine name"
+                              className="w-full"
+                           />
+                        )}
                         <TextInput
+                           disabled={med.medicineId === "OTHER"}
                            {...form.getInputProps(`prescription.medicines.${index}.dosage`)}
                            withAsterisk
                            label="Dosage"
@@ -304,21 +393,21 @@ const ApReport = ({ appointment }: any) => {
                            placeholder="Enter duration in days"
                            className="w-full"
                         />
-                        <Select
+                        {/* <Select
                            {...form.getInputProps(`prescription.medicines.${index}.route`)}
                            withAsterisk
                            label="Route"
                            placeholder="Select route"
                            data={["Oral", "Intravenous", "Topical", "Rectal"]}
                            className="w-full"
-                        />
+                        /> */}
 
                         <Select
                            {...form.getInputProps(`prescription.medicines.${index}.type`)}
                            withAsterisk
                            label="Type"
                            placeholder="Select type"
-                           data={["Tablet", "Syrup", "Injection", "Capsule", "Ointment"]}
+                           data={medicineTypes}
                            className="w-full"
                         />
                         <TextInput
