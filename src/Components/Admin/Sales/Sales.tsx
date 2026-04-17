@@ -18,11 +18,13 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
+import { spotlight, Spotlight, SpotlightActionData } from "@mantine/spotlight";
 import { IconEye, IconPlus, IconSearch, IconTrack } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
+import { getAllPrescriptions, getMedicinesByPrescriptionId } from "../../../Service/AppointmentService";
 import { getAllMedicines } from "../../../Service/MedicineService";
 import { addSales, getAllSaleItems, getAllSales } from "../../../Service/SalesService";
 import { formatDate } from "../../../Utility/DateUtility";
@@ -55,6 +57,7 @@ const Sales = () => {
 
    const [opened, { open, close }] = useDisclosure(false);
    const [saleItems, setSaleItems] = useState<any[]>([]);
+   const [actions, setActions] = useState<SpotlightActionData[]>([]);
 
    const form = useForm({
       initialValues: {
@@ -85,8 +88,38 @@ const Sales = () => {
          .catch((err) => {
             console.log("Error fetching medicines:", err);
          });
+
+      getAllPrescriptions()
+         .then((res) => {
+            setActions(
+               res.map((item: any) => ({
+                  id: String(item.id),
+                  label: item.patientName,
+                  description: `Prescription by Dr. ${item.doctorName} on ${formatDate(item.prescriptionDate)}`,
+                  onClick: () => handleImport(item),
+               })),
+            );
+         })
+         .catch((err) => {
+            console.log("Error fetching prescriptions:", err);
+         });
       fetchData();
    }, []);
+
+   const handleImport = (item: any) => {
+      setLoading(true);
+      getMedicinesByPrescriptionId(item.id)
+         .then((res) => {
+            setSaleItems(res);
+            console.log(res);
+         })
+         .catch((err) => {
+            console.log("Error fetching medicines", err);
+         })
+         .finally(() => {
+            setLoading(false);
+         });
+   };
 
    const fetchData = () => {
       getAllSales()
@@ -188,6 +221,10 @@ const Sales = () => {
       </Group>
    );
 
+   const handleSpotlight = () => {
+      spotlight.open();
+   };
+
    return (
       <>
          {!edit ? (
@@ -219,111 +256,120 @@ const Sales = () => {
                />
             </DataTable>
          ) : (
-            <form className="grid gap-5" onSubmit={form.onSubmit(handleSubmit)}>
-               <LoadingOverlay visible={loading} />
-               <Fieldset
-                  className="grid gap-5 w-full"
-                  legend={<span className="text-lg font-medium text-primary-500">Buyer information</span>}
-                  radius="md"
-               >
-                  <div className="grid grid-cols-2 gap-5 w-full">
-                     <TextInput
-                        withAsterisk
-                        label="Buyer Name"
-                        placeholder="Enter buyer name"
-                        {...form.getInputProps("buyerName")}
-                        className="w-full"
-                     />
-                     <NumberInput
-                        maxLength={10}
-                        withAsterisk
-                        label="Contact Number"
-                        placeholder="Enter contact name"
-                        {...form.getInputProps("buyerContact")}
-                        className="w-full"
-                     />
-                  </div>
-               </Fieldset>
-               <Fieldset
-                  className="grid gap-5 w-full"
-                  legend={<span className="text-lg font-medium text-primary-500">Medicine information</span>}
-                  radius="md"
-               >
-                  <div className="grid gap-4 grid-cols-5 w-full">
-                     {form.values.saleItems.map((item, index) => (
-                        <React.Fragment key={index}>
-                           <div className="col-span-2 w-full">
-                              <Select
-                                 renderOption={renderSelectOption}
-                                 {...form.getInputProps(`saleItems.${index}.medicineId`)}
-                                 label="Medicine "
-                                 placeholder="Select medicine"
-                                 className="w-full"
-                                 data={medicine
-                                    .filter(
-                                       (x) =>
-                                          !form.values.saleItems.some(
-                                             (item1: any, idx) => item1.medicineId === x.id && idx !== index,
-                                          ),
-                                    )
-                                    .map((item) => ({
-                                       ...item,
-                                       value: "" + item.id,
-                                       label: item.name,
-                                    }))}
-                              />
-                           </div>
-                           <div className="col-span-2 w-full">
-                              <NumberInput
-                                 {...form.getInputProps(`saleItems.${index}.quantity`)}
-                                 rightSectionWidth={80}
-                                 label="Quantity"
-                                 placeholder="Enter quantity"
-                                 className="w-full"
-                                 min={0}
-                                 clampBehavior="strict"
-                                 rightSection={
-                                    <div className="text-xs flex gap-1 text-white font-medium rounded-md bg-red-400 p-1">
-                                       Stock {medicineMap[item.medicineId]?.stock}
-                                    </div>
-                                 }
-                              />
-                           </div>
-
-                           <div className="flex item-end justify-between">
-                              {item.quantity && item.medicineId ? (
-                                 <div>
-                                    Total: {item.quantity} X {medicineMap[item.medicineId]?.unitPrice} =
-                                    {item.quantity * medicineMap[item.medicineId]?.unitPrice}
-                                 </div>
-                              ) : (
-                                 <div> </div>
-                              )}
-
-                              <ActionIcon color="red" onClick={() => form.removeListItem("saleItems", index)}>
-                                 <IconTrack size={16} />
-                              </ActionIcon>
-                           </div>
-                        </React.Fragment>
-                     ))}
-                  </div>
-                  <div className="flex item-center justify-center w-full">
-                     <Button variant="outline" leftSection={<IconPlus size={16} />} onClick={addMore}>
-                        Add more
-                     </Button>
-                  </div>
-               </Fieldset>
-
-               <div className="flex items-center gap-5 justify-center w-full">
-                  <Button loading={loading} type="submit" variant="filled" color="primary">
-                     Sell Medicine
-                  </Button>
-
-                  <Button loading={loading} variant="filled" color="red" onClick={cancelButton}>
-                     Cancel
+            <div>
+               <div className="mb-5 flex items-center justify-between">
+                  <h3 className="text-xl text-primary-500 font-medium">Sell Medicine</h3>
+                  <Button variant="filled" onClick={handleSpotlight} leftSection={<IconPlus />}>
+                     Import Prescript
                   </Button>
                </div>
-            </form>
+               <form className="grid gap-5" onSubmit={form.onSubmit(handleSubmit)}>
+                  <LoadingOverlay visible={loading} />
+                  <Fieldset
+                     className="grid gap-5 w-full"
+                     legend={<span className="text-lg font-medium text-primary-500">Buyer information</span>}
+                     radius="md"
+                  >
+                     <div className="grid grid-cols-2 gap-5 w-full">
+                        <TextInput
+                           withAsterisk
+                           label="Buyer Name"
+                           placeholder="Enter buyer name"
+                           {...form.getInputProps("buyerName")}
+                           className="w-full"
+                        />
+                        <NumberInput
+                           maxLength={10}
+                           withAsterisk
+                           label="Contact Number"
+                           placeholder="Enter contact name"
+                           {...form.getInputProps("buyerContact")}
+                           className="w-full"
+                        />
+                     </div>
+                  </Fieldset>
+
+                  <Fieldset
+                     className="grid gap-5 w-full"
+                     legend={<span className="text-lg font-medium text-primary-500">Medicine information</span>}
+                     radius="md"
+                  >
+                     <div className="grid gap-4 grid-cols-5 w-full">
+                        {form.values.saleItems.map((item, index) => (
+                           <React.Fragment key={index}>
+                              <div className="col-span-2 w-full">
+                                 <Select
+                                    renderOption={renderSelectOption}
+                                    {...form.getInputProps(`saleItems.${index}.medicineId`)}
+                                    label="Medicine "
+                                    placeholder="Select medicine"
+                                    className="w-full"
+                                    data={medicine
+                                       .filter(
+                                          (x) =>
+                                             !form.values.saleItems.some(
+                                                (item1: any, idx) => item1.medicineId === x.id && idx !== index,
+                                             ),
+                                       )
+                                       .map((item) => ({
+                                          ...item,
+                                          value: "" + item.id,
+                                          label: item.name,
+                                       }))}
+                                 />
+                              </div>
+                              <div className="col-span-2 w-full">
+                                 <NumberInput
+                                    {...form.getInputProps(`saleItems.${index}.quantity`)}
+                                    rightSectionWidth={80}
+                                    label="Quantity"
+                                    placeholder="Enter quantity"
+                                    className="w-full"
+                                    min={0}
+                                    clampBehavior="strict"
+                                    rightSection={
+                                       <div className="text-xs flex gap-1 text-white font-medium rounded-md bg-red-400 p-1">
+                                          Stock {medicineMap[item.medicineId]?.stock}
+                                       </div>
+                                    }
+                                 />
+                              </div>
+
+                              <div className="flex item-end justify-between">
+                                 {item.quantity && item.medicineId ? (
+                                    <div>
+                                       Total: {item.quantity} X {medicineMap[item.medicineId]?.unitPrice} =
+                                       {item.quantity * medicineMap[item.medicineId]?.unitPrice}
+                                    </div>
+                                 ) : (
+                                    <div> </div>
+                                 )}
+
+                                 <ActionIcon color="red" onClick={() => form.removeListItem("saleItems", index)}>
+                                    <IconTrack size={16} />
+                                 </ActionIcon>
+                              </div>
+                           </React.Fragment>
+                        ))}
+                     </div>
+                     <div className="flex item-center justify-center w-full">
+                        <Button variant="outline" leftSection={<IconPlus size={16} />} onClick={addMore}>
+                           Add more
+                        </Button>
+                     </div>
+                  </Fieldset>
+
+                  <div className="flex items-center gap-5 justify-center w-full">
+                     <Button loading={loading} type="submit" variant="filled" color="primary">
+                        Sell Medicine
+                     </Button>
+
+                     <Button loading={loading} variant="filled" color="red" onClick={cancelButton}>
+                        Cancel
+                     </Button>
+                  </div>
+               </form>
+            </div>
          )}
 
          <Modal opened={opened} size="xl" onClose={close} title="Sole Medicines" centered>
@@ -368,6 +414,15 @@ const Sales = () => {
                </Text>
             )}
          </Modal>
+         <Spotlight
+            actions={actions}
+            nothingFound="Nothing found..."
+            highlightQuery
+            searchProps={{
+               leftSection: <IconSearch size={20} stroke={1.5} />,
+               placeholder: "Search...",
+            }}
+         />
       </>
    );
 };

@@ -90,13 +90,33 @@ const getPrescriptionsByPatientId = async (patientId: any) => {
       });
 };
 
+const getAllPrescriptions = async () => {
+   return axiosInstance
+      .get("/appointment/report/getAllPrescriptions")
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const getMedicinesByPrescriptionId = async (prescriptionId: any) => {
+   return axiosInstance
+      .get(`/appointment/report/getMedicinesByPrescriptionId/${prescriptionId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
 export {
    cancelAppointment,
    createAppointmentReport,
+   getAllPrescriptions,
    getAppointment,
    getAppointmentDetails,
    getAppointmentsByDoctor,
    getAppointmentsByPatient,
+   getMedicinesByPrescriptionId,
    getPrescriptionsByPatientId,
    getReportsByPatientId,
    isReportExists,
