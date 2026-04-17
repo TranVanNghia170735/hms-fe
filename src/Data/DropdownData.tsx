@@ -165,10 +165,13 @@ const freqMap: Record<string, number> = {
    "1-0-1 (Alt Day)": 1,
 };
 
+const bloodGroupMap = bloodGroup;
+
 export {
    appointmentReasons,
    bloodGroup,
    BloodGroupData,
+   bloodGroupMap,
    DoctorDepartments,
    DoctorSpecializations,
    dosageFrequencies,

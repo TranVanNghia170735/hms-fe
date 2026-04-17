@@ -2,8 +2,10 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
 import DoctorDashboard from "../Layout/DoctorDashboard";
 import PatientDashboard from "../Layout/PatientDashboard";
+import AdminDoctorPage from "../Pages/Admin/AdminDoctorPage";
 import AdminInventoryPage from "../Pages/Admin/AdminInventoryPage";
 import AdminMedicinePage from "../Pages/Admin/AdminMedicinePage";
+import AdminPatientPage from "../Pages/Admin/AdminPatientPage";
 import AdminSalesPage from "../Pages/Admin/AdminSalesPage";
 import DoctorAppointmentDetailsPage from "../Pages/Doctor/DoctorAppointmentDetailsPage";
 import DoctorAppointmentPage from "../Pages/Doctor/DoctorAppointmentPage";
@@ -48,8 +50,8 @@ const AppRoutes = () => {
                <Route path="medicine" element={<AdminMedicinePage />} />
                <Route path="inventory" element={<AdminInventoryPage />} />
                <Route path="sales" element={<AdminSalesPage />} />
-               <Route path="patients" element={<div>Random</div>} />
-               <Route path="doctors" element={<div>Random</div>} />
+               <Route path="patients" element={<AdminPatientPage />} />
+               <Route path="doctors" element={<AdminDoctorPage />} />
             </Route>
 
             {/* Doctor */}
