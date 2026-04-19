@@ -9,14 +9,13 @@ import { bloodGroup, BloodGroupData } from "../../../Data/DropdownData";
 import { getPatient, updatePatient } from "../../../Service/PatientProfileService";
 import { formatDate } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
-import { arrayToCSV } from "../../../Utility/OtherUtility";
 import { DropzoneButton } from "../../Utility/Dropzone/DropzoneButton";
+import useProtectedImage from "../../Utility/Dropzone/useProtectedImage";
 
 const Profile = () => {
    const user = useSelector((state: any) => state.user);
    const [edit, setEdit] = useState(false);
    const [opened, { open, close }] = useDisclosure(false);
-
    const [patient, setPatient] = useState<any>({});
 
    const parseArray = (value: any): string[] => {
@@ -30,18 +29,18 @@ const Profile = () => {
    };
 
    useEffect(() => {
-      getPatient(user.id)
+      getPatient(user.profileId)
          .then((data) => {
             setPatient({
                ...data,
-               allergies: data.allergies ? arrayToCSV(JSON.parse(data.allergies)) : null,
-               chronicDisease: data.chronicDisease ? arrayToCSV(JSON.parse(data.allergies)) : null,
+               allergies: data.allergies ? JSON.parse(data.allergies) : null,
+               chronicDisease: data.chronicDisease ? JSON.parse(data.allergies) : null,
             });
          })
          .catch((error) => {
             console.log(error);
          });
-   }, [user.id]);
+   }, [user.profileId]);
 
    const form = useForm({
       initialValues: {
@@ -49,6 +48,7 @@ const Profile = () => {
          phone: patient.phone || "",
          address: patient.address || "",
          aadharNo: patient.aadharNo || "",
+         profilePictureId: patient.profilePictureId || "",
          bloodGroup: patient.bloodGroup || "",
          allergies: parseArray(patient.allergies) || [],
          chronicDisease: parseArray(patient.chronicDisease) || [],
@@ -92,12 +92,14 @@ const Profile = () => {
       setEdit(true);
    };
 
+   const url = useProtectedImage(patient.profilePictureId);
+
    return (
       <div className="p-10">
          <div className="flex justify-between items-start">
             <div className="flex gap-5 items-center">
                <div className="flex flex-col items-center gap-3">
-                  <Avatar variant="filled" src="../nghiatv8.png" size={150} alt="it's me" />
+                  <Avatar variant="filled" src={url} size={150} alt="it's me" />
                   {edit && (
                      <Button size="sm" variant="outline" onClick={open}>
                         Upload
@@ -234,7 +236,7 @@ const Profile = () => {
             centered
             title={<span className="text-xl font-medium">Upload Profile picture</span>}
          >
-            <DropzoneButton />
+            <DropzoneButton close={close} form={form} id="profilePictureId" />
          </Modal>
       </div>
    );
