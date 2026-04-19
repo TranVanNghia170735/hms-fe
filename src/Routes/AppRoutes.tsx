@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
 import DoctorDashboard from "../Layout/DoctorDashboard";
 import PatientDashboard from "../Layout/PatientDashboard";
+import AdminDashboardPage from "../Pages/Admin/AdminDashboardPage";
 import AdminDoctorPage from "../Pages/Admin/AdminDoctorPage";
 import AdminInventoryPage from "../Pages/Admin/AdminInventoryPage";
 import AdminMedicinePage from "../Pages/Admin/AdminMedicinePage";
@@ -46,7 +47,7 @@ const AppRoutes = () => {
                   </ProtectedRoutes>
                }
             >
-               <Route path="dashboard" element={<div>Random</div>} />
+               <Route path="dashboard" element={<AdminDashboardPage />} />
                <Route path="medicine" element={<AdminMedicinePage />} />
                <Route path="inventory" element={<AdminInventoryPage />} />
                <Route path="sales" element={<AdminSalesPage />} />

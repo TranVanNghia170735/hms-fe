@@ -5,6 +5,7 @@ import "@mantine/dropzone/styles.css";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/notifications/styles.css";
 import "@mantine/spotlight/styles.css";
+import '@mantine/charts/styles.css';
 import "primeflex/primeflex.css";
 import "primeicons/primeicons.css";
 import "primereact/resources/primereact.min.css";
