@@ -27,4 +27,13 @@ const getUserProfile = async (id: any) => {
       });
 };
 
-export { getUserProfile, loginUser, registerUser };
+const getRegistrationCounts = async () => {
+   return axiosInstance
+      .get("/user/getRegistrationCounts")
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+export { getRegistrationCounts, getUserProfile, loginUser, registerUser };

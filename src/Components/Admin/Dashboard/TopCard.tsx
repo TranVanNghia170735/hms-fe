@@ -1,8 +1,37 @@
 import { AreaChart } from "@mantine/charts";
 import { ThemeIcon } from "@mantine/core";
 import { IconFileReport, IconStethoscope, IconUsers } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 import { data, doctorData, patientData } from "../../../Data/DashboardData";
+import { countAllAppointments } from "../../../Service/AppointmentService";
+import { getRegistrationCounts } from "../../../Service/UserService";
+import { addZeroMonths } from "../../../Utility/OtherUtility";
 const TopCard = () => {
+   const [apData, setApData] = useState<any[]>(data);
+   const [ptData, setPtData] = useState<any[]>(patientData);
+   const [drData, setDrData] = useState<any[]>(doctorData);
+
+   useEffect(() => {
+      countAllAppointments()
+         .then((res) => {
+            console.log("Test Topcard:", res);
+            setApData(addZeroMonths(res, "month", "count"));
+         })
+         .catch((err) => {
+            console.log(err);
+         });
+
+      getRegistrationCounts()
+         .then((res) => {
+            console.log("getRegistrationCounts", res.patientCounts);
+            setPtData(addZeroMonths(res.patientCounts, "month", "count"));
+            setDrData(addZeroMonths(res.doctorCounts, "month", "count"));
+         })
+         .catch((err) => {
+            console.log(err);
+         });
+   }, []);
+
    const getSum = (data: any[], key: string) => {
       return data.reduce((sum, item) => sum + item[key], 0);
    };
@@ -23,7 +52,7 @@ const TopCard = () => {
             <AreaChart
                h={100}
                data={data}
-               dataKey="date"
+               dataKey="month"
                series={[{ name: id, color: color }]}
                strokeWidth={5}
                withGradient
@@ -42,27 +71,27 @@ const TopCard = () => {
    const cards = [
       {
          name: "Appointments",
-         id: "appointments",
+         id: "count",
          color: "violet",
          bg: "bg-violet-100",
          icon: <IconFileReport />,
-         data: data,
+         data: apData,
       },
       {
          name: "Patients",
-         id: "patients",
+         id: "count",
          color: "orange",
          bg: "bg-violet-100",
          icon: <IconUsers />,
-         data: patientData,
+         data: ptData,
       },
       {
          name: "Doctors",
-         id: "doctors",
+         id: "count",
          color: "green",
          bg: "bg-violet-100",
          icon: <IconStethoscope />,
-         data: doctorData,
+         data: drData,
       },
    ];
    return (

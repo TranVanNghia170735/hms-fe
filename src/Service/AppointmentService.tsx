@@ -108,8 +108,86 @@ const getMedicinesByPrescriptionId = async (prescriptionId: any) => {
       });
 };
 
+const countAppointmentsByPatient = async (patientId: any) => {
+   return axiosInstance
+      .get(`/appointment/countByPatient/${patientId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const countAppointmentsByDoctor = async (doctorId: any) => {
+   return axiosInstance
+      .get(`/appointment/countByDoctor/${doctorId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const countAllAppointments = async () => {
+   return axiosInstance
+      .get("/appointment/visitCount")
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const countReasonsByPatient = async (patientId: any) => {
+   return axiosInstance
+      .get(`/appointment/countReasonsByPatient/${patientId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const countReasonsByDoctor = async (doctorId: any) => {
+   return axiosInstance
+      .get(`/appointment/countReasonsByDoctor/${doctorId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const countAllReasons = async () => {
+   return axiosInstance
+      .get("/appointment/countReasons")
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const getMedicinesConsumedByPatient = async (patientId: any) => {
+   return axiosInstance
+      .get(`/appointment/getMedicinesByPatient/${patientId}`)
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
+const getTodaysAppointments = async () => {
+   return axiosInstance
+      .get("/appointment/today")
+      .then((response) => response.data)
+      .catch((error) => {
+         throw error;
+      });
+};
+
 export {
    cancelAppointment,
+   countAllAppointments,
+   countAllReasons,
+   countAppointmentsByDoctor,
+   countAppointmentsByPatient,
+   countReasonsByDoctor,
+   countReasonsByPatient,
    createAppointmentReport,
    getAllPrescriptions,
    getAppointment,
@@ -117,8 +195,10 @@ export {
    getAppointmentsByDoctor,
    getAppointmentsByPatient,
    getMedicinesByPrescriptionId,
+   getMedicinesConsumedByPatient,
    getPrescriptionsByPatientId,
    getReportsByPatientId,
+   getTodaysAppointments,
    isReportExists,
    scheduleAppointment,
 };

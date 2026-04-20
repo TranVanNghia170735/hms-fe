@@ -1,7 +1,26 @@
 import { ScrollArea } from "@mantine/core";
+import { useEffect, useState } from "react";
 import { medicines } from "../../../Data/DashboardData";
+import { getAllMedicines } from "../../../Service/MedicineService";
 
 const Medicines = () => {
+   const [data, setData] = useState<any[]>(medicines);
+
+   useEffect(() => {
+      fetchData();
+   }, []);
+
+   const fetchData = () => {
+      getAllMedicines()
+         .then((res) => {
+            console.log("getAllMedicines", res);
+            setData(res);
+         })
+         .catch((err) => {
+            console.log("Error fetching medicines:", err);
+         });
+   };
+
    const card = (app: any) => {
       return (
          <div
@@ -9,12 +28,12 @@ const Medicines = () => {
             key={app.id}
          >
             <div>
-               <div className="font-semibold">{app.name}</div>
-               <div className="text-sm text-gray-500">{app.manufacturer}</div>
+               <div className="font-semibold text-sm">{app.name}</div>
+               <div className="text-xs text-gray-500">{app.manufacturer}</div>
             </div>
             <div className="text-right">
-               <div className="text-sm text-gray-500">{app.dosage}</div>
-               <div className="text-sm text-gray-500">Stock: {app.stock}</div>
+               <div className="text-xs text-gray-500">{app.dosage}</div>
+               <div className="text-xs text-gray-500">Stock: {app.stock}</div>
             </div>
          </div>
       );
@@ -25,7 +44,7 @@ const Medicines = () => {
          <div className="text-xl font-semibold">Medicines</div>
          <div>
             <ScrollArea.Autosize mah={300} mx="auto">
-               {medicines.map((app) => card(app))}
+               {data.map((app) => card(app))}
             </ScrollArea.Autosize>
          </div>
       </div>
