@@ -10,6 +10,7 @@ import {
    LoadingOverlay,
    Modal,
    NumberInput,
+   SegmentedControl,
    Select,
    SelectProps,
    Text,
@@ -19,10 +20,11 @@ import {
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { spotlight, Spotlight, SpotlightActionData } from "@mantine/spotlight";
-import { IconEye, IconPlus, IconSearch, IconTrack } from "@tabler/icons-react";
+import { IconEye, IconLayoutGrid, IconPlus, IconSearch, IconTable, IconTrack } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
+import { Toolbar } from "primereact/toolbar";
 import React, { useEffect, useState } from "react";
 import { freqMap } from "../../../Data/DropdownData";
 import { getAllPrescriptions, getMedicinesByPrescriptionId } from "../../../Service/AppointmentService";
@@ -30,6 +32,7 @@ import { getAllMedicines } from "../../../Service/MedicineService";
 import { addSales, getAllSaleItems, getAllSales } from "../../../Service/SalesService";
 import { formatDate } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
+import SaleCard from "./SaleCard";
 
 interface SaleItem {
    medicineId: string;
@@ -59,6 +62,8 @@ const Sales = () => {
    const [opened, { open, close }] = useDisclosure(false);
    const [saleItems, setSaleItems] = useState<any[]>([]);
    const [actions, setActions] = useState<SpotlightActionData[]>([]);
+
+   const [view, setView] = useState("table");
 
    const form = useForm({
       initialValues: {
@@ -195,6 +200,20 @@ const Sales = () => {
             setLoading(false);
          });
    };
+
+   const onEdit = (rowData: any) => {
+      setEdit(true);
+      form.setValues({
+         ...rowData,
+         name: rowData.name,
+         dosage: rowData.dosage,
+         category: rowData.category,
+         type: rowData.type,
+         manufacturer: rowData.manufacturer,
+         unitPrice: rowData.unitPrice,
+      });
+   };
+
    const renderHeader = () => {
       return (
          <div className="flex flex-wrap gap-2 justify-between items-center">
@@ -252,36 +271,84 @@ const Sales = () => {
       spotlight.open();
    };
 
+   const startToolbarTemplate = () => {
+      return (
+         <Button variant="filled" onClick={() => setEdit(true)}>
+            Sell Medicine
+         </Button>
+      );
+   };
+
+   const rightToolbarTemplate = () => {
+      return (
+         <div className="flex flex-wrap gap-2 justify-end items-center">
+            <SegmentedControl
+               value={view}
+               color="primary"
+               onChange={setView}
+               data={[
+                  { label: <IconTable />, value: "table" },
+                  { label: <IconLayoutGrid />, value: "card" },
+               ]}
+            />
+            <TextInput
+               leftSection={<IconSearch />}
+               fw={500}
+               value={globalFilterValue}
+               onChange={onGlobalFilterChange}
+               placeholder="Keyword Search"
+            />
+         </div>
+      );
+   };
+
    return (
       <>
          {!edit ? (
-            <DataTable
-               stripedRows
-               value={data}
-               size="small"
-               paginator
-               header={header}
-               removableSort
-               rows={10}
-               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-               rowsPerPageOptions={[10, 25, 50]}
-               dataKey="id"
-               filters={filters}
-               filterDisplay="menu"
-               globalFilterFields={["doctorName", "notes"]}
-               emptyMessage="No appointment found."
-               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            >
-               <Column field="buyerName" header="Buyer" />
-               <Column field="buyerContact" header="Contact" />
-               <Column field="totalAmount" header="Total Amount" sortable />
-               <Column field="saleDate" header="Sale Date" body={(rowData) => formatDate(rowData.saleData)} sortable />
-               <Column
-                  headerStyle={{ textAlign: "center" }}
-                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
-                  body={actionBodyTemplate}
-               />
-            </DataTable>
+            <div>
+               <Toolbar className="mb-4 !p-1" start={startToolbarTemplate} end={rightToolbarTemplate}></Toolbar>
+               {view == "table" ? (
+                  <DataTable
+                     stripedRows
+                     value={data}
+                     size="small"
+                     paginator
+                     removableSort
+                     rows={10}
+                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                     rowsPerPageOptions={[10, 25, 50]}
+                     dataKey="id"
+                     filters={filters}
+                     filterDisplay="menu"
+                     globalFilterFields={["doctorName", "notes"]}
+                     emptyMessage="No appointment found."
+                     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                  >
+                     <Column field="buyerName" header="Buyer" />
+                     <Column field="buyerContact" header="Contact" />
+                     <Column field="totalAmount" header="Total Amount" sortable />
+                     <Column
+                        field="saleDate"
+                        header="Sale Date"
+                        body={(rowData) => formatDate(rowData.saleData)}
+                        sortable
+                     />
+                     <Column
+                        headerStyle={{ textAlign: "center" }}
+                        bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                        body={actionBodyTemplate}
+                     />
+                  </DataTable>
+               ) : (
+                  <div className="grid grid-cols-4 gap-5">
+                     {data?.map((appointment) => (
+                        <SaleCard key={appointment.id} {...appointment} onView={() => handleDetail(appointment)} />
+                     ))}
+
+                     {data.length === 0 && <div className="col-span-4 text-center text-gray-500"> No sales found</div>}
+                  </div>
+               )}
+            </div>
          ) : (
             <div>
                <div className="mb-5 flex items-center justify-between">

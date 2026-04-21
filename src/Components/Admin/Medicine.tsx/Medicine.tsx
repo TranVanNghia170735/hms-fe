@@ -1,15 +1,17 @@
-import { ActionIcon, Button, Fieldset, NumberInput, Select, TextInput } from "@mantine/core";
+import { ActionIcon, Button, Fieldset, NumberInput, SegmentedControl, Select, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconEdit, IconSearch } from "@tabler/icons-react";
+import { IconEdit, IconLayoutGrid, IconSearch, IconTable } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
+import { Toolbar } from "primereact/toolbar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { medicineCategories, medicineTypes } from "../../../Data/DropdownData";
 import { addMedicine, getAllMedicines, updateMedicine } from "../../../Service/MedicineService";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
 import { capitalizeFirstLetter } from "../../../Utility/OtherUtility";
+import MedCard from "./MedCard";
 
 type Medicine = {
    name: string;
@@ -41,28 +43,7 @@ const Medicine = () => {
    };
 
    const [loading, setLoading] = useState(false);
-   //  useEffect(() => {
-   //     fetchData();
-   //  }, [appointment.id, appointment?.patientId]);
-
-   //  const fetchData = () => {
-   //     if (!appointment?.patientId) return;
-   //     getReportsByPatientId(appointment?.patientId)
-   //        .then((res) => {
-   //           setData(res);
-   //        })
-   //        .catch((err) => {
-   //           console.log("Error fetching reports:", err);
-   //        });
-   //     isReportExists(appointment.id)
-   //        .then((res) => {
-   //           setAllowAdd(!res);
-   //        })
-   //        .catch((err) => {
-   //           setAllowAdd(true);
-   //           setEdit(true);
-   //        });
-   //  };
+   const [view, setView] = useState("table");
 
    const form = useForm({
       initialValues: {
@@ -83,18 +64,6 @@ const Medicine = () => {
          unitPrice: (value: any) => (value ? null : "Unit price is required"),
       },
    });
-
-   const insertMedicine = (medicine: any) => {
-      form.insertListItem("prescription.medicines", {
-         name: "",
-         dosage: "",
-         frequency: "",
-         duration: 0,
-         route: "",
-         type: "",
-         instructions: "",
-      });
-   };
 
    useEffect(() => {
       fetchData();
@@ -184,39 +153,88 @@ const Medicine = () => {
       setEdit(false);
    };
 
+   const startToolbarTemplate = () => {
+      return (
+         <Button variant="filled" onClick={() => setEdit(true)}>
+            Add
+         </Button>
+      );
+   };
+
+   const rightToolbarTemplate = () => {
+      return (
+         <div className="flex flex-wrap gap-2 justify-end items-center">
+            <SegmentedControl
+               value={view}
+               color="primary"
+               onChange={setView}
+               data={[
+                  { label: <IconTable />, value: "table" },
+                  { label: <IconLayoutGrid />, value: "card" },
+               ]}
+            />
+            <TextInput
+               leftSection={<IconSearch />}
+               fw={500}
+               value={globalFilterValue}
+               onChange={onGlobalFilterChange}
+               placeholder="Keyword Search"
+            />
+         </div>
+      );
+   };
+
    return (
       <div>
          {!edit ? (
-            <DataTable
-               stripedRows
-               value={data}
-               size="small"
-               paginator
-               header={header}
-               rows={10}
-               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-               rowsPerPageOptions={[10, 25, 50]}
-               dataKey="id"
-               filters={filters}
-               filterDisplay="menu"
-               globalFilterFields={["doctorName", "notes"]}
-               emptyMessage="No appointment found."
-               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            >
-               <Column field="name" header="Name" />
+            <div>
+               <Toolbar className="mb-4 !p-1" start={startToolbarTemplate} end={rightToolbarTemplate}></Toolbar>
+               {view == "table" ? (
+                  <DataTable
+                     stripedRows
+                     value={data}
+                     size="small"
+                     paginator
+                     rows={10}
+                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                     rowsPerPageOptions={[10, 25, 50]}
+                     dataKey="id"
+                     filters={filters}
+                     filterDisplay="menu"
+                     globalFilterFields={["doctorName", "notes"]}
+                     emptyMessage="No appointment found."
+                     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                  >
+                     <Column field="name" header="Name" />
 
-               <Column field="dosage" header="Dosage" />
-               <Column field="stock" header="Stock" />
-               <Column field="category" header="Category" body={(rowData) => capitalizeFirstLetter(rowData.category)} />
-               <Column field="type" header="Type" body={(rowData) => capitalizeFirstLetter(rowData.type)} />
-               <Column field="manufacturer" header="Manufacturer" />
-               <Column field="unitPrice" header="Unit Price" sortable />
-               <Column
-                  headerStyle={{ textAlign: "center" }}
-                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
-                  body={actionBodyTemplate}
-               />
-            </DataTable>
+                     <Column field="dosage" header="Dosage" />
+                     <Column field="stock" header="Stock" />
+                     <Column
+                        field="category"
+                        header="Category"
+                        body={(rowData) => capitalizeFirstLetter(rowData.category)}
+                     />
+                     <Column field="type" header="Type" body={(rowData) => capitalizeFirstLetter(rowData.type)} />
+                     <Column field="manufacturer" header="Manufacturer" />
+                     <Column field="unitPrice" header="Unit Price" sortable />
+                     <Column
+                        headerStyle={{ textAlign: "center" }}
+                        bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                        body={actionBodyTemplate}
+                     />
+                  </DataTable>
+               ) : (
+                  <div className="grid grid-cols-4 gap-5">
+                     {data?.map((appointment) => (
+                        <MedCard key={appointment.id} {...appointment} onEdit={() => onEdit(appointment)} />
+                     ))}
+
+                     {data.length === 0 && (
+                        <div className="col-span-4 text-center text-gray-500"> No medicine found</div>
+                     )}
+                  </div>
+               )}
+            </div>
          ) : (
             <form className="grid gap-5" onSubmit={form.onSubmit(handleSubmit)}>
                <Fieldset
