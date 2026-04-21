@@ -1,15 +1,23 @@
 import { AreaChart } from "@mantine/charts";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { countAppointmentsByDoctor } from "../../../Service/AppointmentService";
+import { addZeroMonths } from "../../../Utility/OtherUtility";
 
 const Metrices = () => {
-   const data = [
-      { date: "2025-10-01", appointments: 5 },
-      { date: "2025-10-02", appointments: 8 },
-      { date: "2025-10-03", appointments: 6 },
-      { date: "2025-10-04", appointments: 10 },
-      { date: "2025-10-05", appointments: 7 },
-      { date: "2025-10-06", appointments: 9 },
-      { date: "2025-10-07", appointments: 11 },
-   ];
+   const [appointments, setAppointments] = useState<any[]>([]);
+   const user = useSelector((state: any) => state.user);
+
+   useEffect(() => {
+      countAppointmentsByDoctor(user.profileId)
+         .then((res) => {
+            console.log("countAppointmentsByDoctor", res);
+            setAppointments(addZeroMonths(res, "month", "count"));
+         })
+         .catch((err) => {
+            console.log(err);
+         });
+   }, []);
 
    const getSum = (data: any[], key: string) => {
       return data.reduce((sum, item) => sum + item[key], 0);
@@ -19,15 +27,15 @@ const Metrices = () => {
          <div className="flex justify-between p-5 items-center">
             <div>
                <div className="font-semibold">Appointments</div>
-               <div className="text-xs text-gray-500">Last 7 days</div>
+               <div className="text-xs text-gray-500">{new Date().getFullYear()}</div>
             </div>
-            <div className="text-2xl font-bold text-violet-500">{getSum(data, "appointments")}</div>
+            <div className="text-2xl font-bold text-violet-500">{getSum(appointments, "count")}</div>
          </div>
          <AreaChart
             h={100}
-            data={data}
-            dataKey="date"
-            series={[{ name: "appointments", color: "violet" }]}
+            data={appointments}
+            dataKey="month"
+            series={[{ name: "count", color: "violet" }]}
             strokeWidth={5}
             withGradient
             fillOpacity={0.7}

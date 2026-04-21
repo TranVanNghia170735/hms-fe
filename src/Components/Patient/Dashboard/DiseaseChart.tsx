@@ -1,7 +1,23 @@
 import { DonutChart } from "@mantine/charts";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { diseaseData } from "../../../Data/DashboardData";
+import { countReasonsByPatient } from "../../../Service/AppointmentService";
+import { convertReasonChartData } from "../../../Utility/OtherUtility";
 
 const DiseaseChart = () => {
+   const [data, setData] = useState<any[]>(diseaseData);
+   const user = useSelector((state: any) => state.user);
+
+   useEffect(() => {
+      countReasonsByPatient(user.profileId)
+         .then((res) => {
+            setData(convertReasonChartData(res));
+         })
+         .catch((err) => {
+            console.log(err);
+         });
+   }, []);
    return (
       <div className="p-3 border rounded-xl bg-green-50 shadow-xl flex flex-col gap-3">
          <div className="text-xl font-semibold">Disease Distribution</div>
@@ -13,7 +29,7 @@ const DiseaseChart = () => {
                withLabelsLine
                labelsType="percent"
                withLabels
-               data={diseaseData}
+               data={data}
                chartLabel="Disease"
             />
             ;

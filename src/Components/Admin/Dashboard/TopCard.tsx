@@ -13,8 +13,7 @@ const TopCard = () => {
 
    useEffect(() => {
       countAllAppointments()
-         .then((res) => {
-            console.log("Test Topcard:", res);
+         .then((res: any) => {
             setApData(addZeroMonths(res, "month", "count"));
          })
          .catch((err) => {
@@ -23,7 +22,6 @@ const TopCard = () => {
 
       getRegistrationCounts()
          .then((res) => {
-            console.log("getRegistrationCounts", res.patientCounts);
             setPtData(addZeroMonths(res.patientCounts, "month", "count"));
             setDrData(addZeroMonths(res.doctorCounts, "month", "count"));
          })

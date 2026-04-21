@@ -8,7 +8,6 @@ const Doctors = () => {
    useEffect(() => {
       getAllDoctors()
          .then((data) => {
-            console.log(data);
             setDoctors(data);
          })
          .catch((error) => {

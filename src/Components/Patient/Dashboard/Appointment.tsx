@@ -1,7 +1,23 @@
 import { ScrollArea } from "@mantine/core";
-import { appointments } from "../../../Data/DashboardData";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { getAppointmentsByPatient } from "../../../Service/AppointmentService";
+import { extractTimeIn12HourFormat, formatDate } from "../../../Utility/DateUtility";
 
 const Appointment = () => {
+   const user = useSelector((state: any) => state.user);
+   const [appointments, setAppointments] = useState<any[]>([]);
+
+   useEffect(() => {
+      getAppointmentsByPatient(user.profileId)
+         .then((res) => {
+            setAppointments(res);
+         })
+         .catch((err) => {
+            console.log(err);
+         });
+   }, []);
+
    const card = (app: any) => {
       return (
          <div
@@ -9,11 +25,12 @@ const Appointment = () => {
             key={app.id}
          >
             <div className="">
-               <div className="font-semibold">{app.doctor}</div>
+               <div className="font-semibold">{app.doctorName}</div>
                <div className="text-sm text-gray-500">{app.reason}</div>
             </div>
             <div className="text-right">
-               <div className="text-sm text-gray-500">{app.time}</div>
+               <div className="text-sm text-gray-500">{formatDate(app.appointmentTime)}</div>
+               <div className="text-sm text-gray-500">{extractTimeIn12HourFormat(app.appointmentTime)}</div>
             </div>
          </div>
       );

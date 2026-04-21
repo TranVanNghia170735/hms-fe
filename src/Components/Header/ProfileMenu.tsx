@@ -18,10 +18,8 @@ function ProfileMenu() {
 
    useEffect(() => {
       if (!user) return;
-      console.log("getUserProfile", user.id);
       getUserProfile(user.id)
          .then((data) => {
-            console.log("Data getUserProfile", +data);
             setPicId(data);
          })
          .catch((error) => {
@@ -30,8 +28,6 @@ function ProfileMenu() {
    }, [user]);
 
    const url = useProtectedImage(picId);
-
-   console.log("Test", picId);
 
    return (
       <Menu shadow="md" width={200}>

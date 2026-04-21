@@ -8,7 +8,6 @@ const Patient = () => {
    useEffect(() => {
       getAllPatients()
          .then((data) => {
-            console.log(data);
             setPatients(data);
          })
          .catch((error) => {

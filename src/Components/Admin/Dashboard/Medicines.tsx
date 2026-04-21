@@ -13,7 +13,6 @@ const Medicines = () => {
    const fetchData = () => {
       getAllMedicines()
          .then((res) => {
-            console.log("getAllMedicines", res);
             setData(res);
          })
          .catch((err) => {
