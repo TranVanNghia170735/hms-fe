@@ -6,16 +6,18 @@ import {
    Group,
    MultiSelect,
    NumberInput,
+   SegmentedControl,
    Select,
    SelectProps,
    Textarea,
    TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconEye, IconSearch, IconTrash } from "@tabler/icons-react";
+import { IconEye, IconLayoutGrid, IconSearch, IconTable, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
+import { Toolbar } from "primereact/toolbar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { dosageFrequencies, medicineTypes, symptoms, tests } from "../../../Data/DropdownData";
@@ -23,6 +25,7 @@ import { createAppointmentReport, getReportsByPatientId, isReportExists } from "
 import { getAllMedicines } from "../../../Service/MedicineService";
 import { formatDate } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
+import ReportCard from "./ReportCard";
 
 type Medicine = {
    name: string | null;
@@ -56,6 +59,7 @@ const ApReport = ({ appointment }: any) => {
    const [edit, setEdit] = useState<boolean>(true);
    const [loading, setLoading] = useState(false);
    const [medicineMap, setMedicineMap] = useState<Record<string, any>>({});
+   const [view, setView] = useState("table");
 
    useEffect(() => {
       fetchData();
@@ -232,42 +236,88 @@ const ApReport = ({ appointment }: any) => {
       }
    };
 
+   const rightToolbarTemplate = () => {
+      return (
+         <div className="flex flex-wrap gap-2 justify-end items-center">
+            <SegmentedControl
+               value={view}
+               color="primary"
+               onChange={setView}
+               data={[
+                  { label: <IconTable />, value: "table" },
+                  { label: <IconLayoutGrid />, value: "card" },
+               ]}
+            />
+            <TextInput
+               leftSection={<IconSearch />}
+               fw={500}
+               value={globalFilterValue}
+               onChange={onGlobalFilterChange}
+               placeholder="Keyword Search"
+            />
+         </div>
+      );
+   };
+
+   const startToolbarTemplate = () => {
+      return (
+         allowAdd && (
+            <Button variant="filled" onClick={() => setEdit(true)}>
+               Add Report
+            </Button>
+         )
+      );
+   };
+
    return (
       <div>
          {!edit ? (
-            <DataTable
-               stripedRows
-               value={data}
-               size="small"
-               paginator
-               header={header}
-               rows={10}
-               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-               rowsPerPageOptions={[10, 25, 50]}
-               dataKey="id"
-               filters={filters}
-               filterDisplay="menu"
-               globalFilterFields={["doctorName", "notes"]}
-               emptyMessage="No appointment found."
-               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            >
-               <Column field="doctorName" header="Doctor" />
+            <div>
+               <Toolbar className="mb-4 !p-1" start={startToolbarTemplate} end={rightToolbarTemplate}></Toolbar>
+               {view == "table" ? (
+                  <DataTable
+                     stripedRows
+                     value={data}
+                     size="small"
+                     paginator
+                     header={header}
+                     rows={10}
+                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                     rowsPerPageOptions={[10, 25, 50]}
+                     dataKey="id"
+                     filters={filters}
+                     filterDisplay="menu"
+                     globalFilterFields={["doctorName", "notes"]}
+                     emptyMessage="No appointment found."
+                     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                  >
+                     <Column field="doctorName" header="Doctor" />
 
-               <Column field="diagnosis" header="Diagnosis" />
+                     <Column field="diagnosis" header="Diagnosis" />
 
-               <Column
-                  field="reportDate"
-                  header="Report Date"
-                  sortable
-                  body={(rowData) => formatDate(rowData.createdAt)}
-               />
-               <Column field="notes" header="Notes" style={{ minWidth: "14rem" }} />
-               <Column
-                  headerStyle={{ width: "5rem", textAlign: "center" }}
-                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
-                  body={actionBodyTemplate}
-               />
-            </DataTable>
+                     <Column
+                        field="reportDate"
+                        header="Report Date"
+                        sortable
+                        body={(rowData) => formatDate(rowData.createdAt)}
+                     />
+                     <Column field="notes" header="Notes" style={{ minWidth: "14rem" }} />
+                     <Column
+                        headerStyle={{ width: "5rem", textAlign: "center" }}
+                        bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                        body={actionBodyTemplate}
+                     />
+                  </DataTable>
+               ) : (
+                  <div className="grid grid-cols-4 gap-5">
+                     {data?.map((appointment) => (
+                        <ReportCard key={appointment.id} {...appointment} />
+                     ))}
+
+                     {data.length === 0 && <div className="col-span-4 text-center text-gray-500"> No appointment</div>}
+                  </div>
+               )}
+            </div>
          ) : (
             <form onSubmit={form.onSubmit(handleSubmit)} className="grid gap-5">
                <Fieldset

@@ -13,11 +13,10 @@ import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconEye, IconPlus, IconSearch, IconTrash } from "@tabler/icons-react";
+import { IconEye, IconLayoutGrid, IconPlus, IconSearch, IconTable, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode, FilterOperator } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
-import "primereact/resources/themes/lara-light-blue/theme.css";
 import { Tag } from "primereact/tag";
 import { Toolbar } from "primereact/toolbar";
 import React, { useEffect, useState } from "react";
@@ -28,6 +27,7 @@ import { cancelAppointment, getAppointmentsByDoctor, scheduleAppointment } from 
 import { getDoctorDropdown } from "../../../Service/DoctorProfileService";
 import { formatDateWithTime } from "../../../Utility/DateUtility";
 import { errorNotification, successNotification } from "../../../Utility/NotificationUtil";
+import ApCard from "./ApCard";
 
 interface Country {
    name: string;
@@ -54,6 +54,8 @@ interface Customer {
 
 export default function Appointment() {
    const navigate = useNavigate();
+
+   const [view, setView] = useState("cards");
    const [opened, { open, close }] = useDisclosure(false);
    const [doctors, setDoctors] = useState<any[]>([]);
    const [appointments, setAppointments] = useState<any[]>([]);
@@ -238,13 +240,24 @@ export default function Appointment() {
 
    const rightToolbarTemplate = () => {
       return (
-         <TextInput
-            leftSection={<IconSearch />}
-            fw={500}
-            value={globalFilterValue}
-            onChange={onGlobalFilterChange}
-            placeholder="Keyword Search"
-         />
+         <div className="flex gap-5 items-center">
+            <SegmentedControl
+               value={view}
+               color="primary"
+               onChange={setView}
+               data={[
+                  { label: <IconTable />, value: "table" },
+                  { label: <IconLayoutGrid />, value: "card" },
+               ]}
+            />
+            <TextInput
+               leftSection={<IconSearch />}
+               fw={500}
+               value={globalFilterValue}
+               onChange={onGlobalFilterChange}
+               placeholder="Keyword Search"
+            />
+         </div>
       );
    };
 
@@ -292,74 +305,85 @@ export default function Appointment() {
    return (
       <div className="card">
          <Toolbar className="mb-4" start={centerToolbarTemplate} end={rightToolbarTemplate}></Toolbar>
-         <DataTable
-            stripedRows
-            value={filteredAppointments}
-            size="small"
-            paginator
-            // header={header}
-            rows={10}
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            rowsPerPageOptions={[10, 25, 50]}
-            dataKey="id"
-            filters={filters}
-            filterDisplay="menu"
-            globalFilterFields={["patientName", "reason", "notes", "status"]}
-            emptyMessage="No appointment found."
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-         >
-            <Column
-               field="patientName"
-               header="Patient"
-               sortable
-               filter
-               filterPlaceholder="Search by name"
-               style={{ minWidth: "14rem" }}
-            />
+         {view === "table" ? (
+            <DataTable
+               stripedRows
+               value={filteredAppointments}
+               size="small"
+               paginator
+               // header={header}
+               rows={10}
+               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+               rowsPerPageOptions={[10, 25, 50]}
+               dataKey="id"
+               filters={filters}
+               filterDisplay="menu"
+               globalFilterFields={["patientName", "reason", "notes", "status"]}
+               emptyMessage="No appointment found."
+               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            >
+               <Column
+                  field="patientName"
+                  header="Patient"
+                  sortable
+                  filter
+                  filterPlaceholder="Search by name"
+                  style={{ minWidth: "14rem" }}
+               />
 
-            <Column field="patientPhone" header="Phone" style={{ minWidth: "14rem" }} />
+               <Column field="patientPhone" header="Phone" style={{ minWidth: "14rem" }} />
 
-            <Column
-               field="appointmentTime"
-               header="Appointment Time"
-               sortable
-               style={{ minWidth: "14rem" }}
-               body={timeTemplate}
-            />
+               <Column
+                  field="appointmentTime"
+                  header="Appointment Time"
+                  sortable
+                  style={{ minWidth: "14rem" }}
+                  body={timeTemplate}
+               />
 
-            <Column
-               field="reason"
-               header="Reason"
-               sortable
-               filter
-               filterPlaceholder="Search by name"
-               style={{ minWidth: "14rem" }}
-            />
-            <Column
-               field="notes"
-               header="Notes"
-               sortable
-               filter
-               filterPlaceholder="Search by name"
-               style={{ minWidth: "14rem" }}
-            />
+               <Column
+                  field="reason"
+                  header="Reason"
+                  sortable
+                  filter
+                  filterPlaceholder="Search by name"
+                  style={{ minWidth: "14rem" }}
+               />
+               <Column
+                  field="notes"
+                  header="Notes"
+                  sortable
+                  filter
+                  filterPlaceholder="Search by name"
+                  style={{ minWidth: "14rem" }}
+               />
 
-            <Column
-               field="status"
-               header="Status"
-               sortable
-               filterMenuStyle={{ width: "14rem" }}
-               style={{ minWidth: "12rem" }}
-               body={statusBodyTemplate}
-               filter
-            />
+               <Column
+                  field="status"
+                  header="Status"
+                  sortable
+                  filterMenuStyle={{ width: "14rem" }}
+                  style={{ minWidth: "12rem" }}
+                  body={statusBodyTemplate}
+                  filter
+               />
 
-            <Column
-               headerStyle={{ width: "5rem", textAlign: "center" }}
-               bodyStyle={{ textAlign: "center", overflow: "visible" }}
-               body={actionBodyTemplate}
-            />
-         </DataTable>
+               <Column
+                  headerStyle={{ width: "5rem", textAlign: "center" }}
+                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                  body={actionBodyTemplate}
+               />
+            </DataTable>
+         ) : (
+            <div className="grid grid-cols-4 gap-5">
+               {filteredAppointments?.map((appointment) => (
+                  <ApCard key={appointment.id} {...appointment} />
+               ))}
+               {filteredAppointments.length === 0 && (
+                  <div className="col-span-4 text-center text-gray-500">No appointment found</div>
+               )}
+            </div>
+         )}
          <Modal
             opened={opened}
             onClose={close}

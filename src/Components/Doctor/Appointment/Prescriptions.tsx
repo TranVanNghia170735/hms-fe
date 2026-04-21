@@ -1,16 +1,19 @@
-import { ActionIcon, Card, Divider, Grid, Modal, Text, TextInput, Title } from "@mantine/core";
+import { ActionIcon, Card, Divider, Grid, Modal, SegmentedControl, Text, TextInput, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconEye, IconMedicineSyrup, IconSearch } from "@tabler/icons-react";
+import { IconEye, IconLayoutGrid, IconMedicineSyrup, IconSearch, IconTable } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
+import { Toolbar } from "primereact/toolbar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPrescriptionsByPatientId } from "../../../Service/AppointmentService";
 import { formatDate } from "../../../Utility/DateUtility";
+import PresCard from "./PresCard";
 
 const Prescriptions = ({ appointment }: any) => {
    const navigate = useNavigate();
+   const [view, setView] = useState("table");
    const [data, setData] = useState<any[]>([]);
    const [opened, { open, close }] = useDisclosure(false);
    const [medicineData, setMedicineData] = useState<any>([]);
@@ -43,9 +46,18 @@ const Prescriptions = ({ appointment }: any) => {
       setMedicineData(medicine);
    };
 
-   const renderHeader = () => {
+   const rightToolbarTemplate = () => {
       return (
          <div className="flex flex-wrap gap-2 justify-end items-center">
+            <SegmentedControl
+               value={view}
+               color="primary"
+               onChange={setView}
+               data={[
+                  { label: <IconTable />, value: "table" },
+                  { label: <IconLayoutGrid />, value: "card" },
+               ]}
+            />
             <TextInput
                leftSection={<IconSearch />}
                fw={500}
@@ -56,8 +68,6 @@ const Prescriptions = ({ appointment }: any) => {
          </div>
       );
    };
-
-   const header = renderHeader();
 
    const actionBodyTemplate = (rowData: any) => {
       return (
@@ -74,39 +84,56 @@ const Prescriptions = ({ appointment }: any) => {
    };
    return (
       <div>
-         <DataTable
-            stripedRows
-            value={data}
-            size="small"
-            paginator
-            header={header}
-            rows={10}
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            rowsPerPageOptions={[10, 25, 50]}
-            dataKey="id"
-            filters={filters}
-            filterDisplay="menu"
-            globalFilterFields={["doctorName", "notes"]}
-            emptyMessage="No appointment found."
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-         >
-            <Column field="doctorName" header="Doctor" />
+         <Toolbar className="mb-4 !p-1" end={rightToolbarTemplate}>
+            {" "}
+         </Toolbar>
+         {view ? (
+            <DataTable
+               stripedRows
+               value={data}
+               size="small"
+               paginator
+               rows={10}
+               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+               rowsPerPageOptions={[10, 25, 50]}
+               dataKey="id"
+               filters={filters}
+               filterDisplay="menu"
+               globalFilterFields={["doctorName", "notes"]}
+               emptyMessage="No appointment found."
+               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            >
+               <Column field="doctorName" header="Doctor" />
 
-            <Column
-               field="prescriptionDate"
-               header="Prescription Date"
-               sortable
-               body={(rowData) => formatDate(rowData.prescriptionDate)}
-            />
+               <Column
+                  field="prescriptionDate"
+                  header="Prescription Date"
+                  sortable
+                  body={(rowData) => formatDate(rowData.prescriptionDate)}
+               />
 
-            <Column field="medicine" header="Medicines" sortable body={(rowData) => rowData.medicines?.length ?? 0} />
-            <Column field="notes" header="Notes" style={{ minWidth: "14rem" }} />
-            <Column
-               headerStyle={{ width: "5rem", textAlign: "center" }}
-               bodyStyle={{ textAlign: "center", overflow: "visible" }}
-               body={actionBodyTemplate}
-            />
-         </DataTable>
+               <Column
+                  field="medicine"
+                  header="Medicines"
+                  sortable
+                  body={(rowData) => rowData.medicines?.length ?? 0}
+               />
+               <Column field="notes" header="Notes" style={{ minWidth: "14rem" }} />
+               <Column
+                  headerStyle={{ width: "5rem", textAlign: "center" }}
+                  bodyStyle={{ textAlign: "center", overflow: "visible" }}
+                  body={actionBodyTemplate}
+               />
+            </DataTable>
+         ) : (
+            <div className="grid grid-cols-4 gap-5">
+               {data?.map((appointment) => (
+                  <PresCard key={appointment.id} {...appointment} handleMedicine={handleMedicine} />
+               ))}
+
+               {data?.length === 0 && <div className="col-span-4 text-center text-gray-500">No appointment found</div>}
+            </div>
+         )}
          <Modal opened={opened} size="xl" onClose={close} title="Medicines" centered>
             <div className="grid grid-cols-2 gap-5">
                {medicineData.map((data: any, index: number) => (
