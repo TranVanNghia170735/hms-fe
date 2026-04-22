@@ -1,7 +1,7 @@
 import { Avatar, Button, Divider, Modal, NumberInput, Select, Table, TagsInput, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { IconEdit } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -94,12 +94,14 @@ const Profile = () => {
 
    const url = useProtectedImage(patient.profilePictureId);
 
+   const matches = useMediaQuery("(max-width: 768px)");
+
    return (
-      <div className="p-10">
-         <div className="flex justify-between items-start">
+      <div className="md:p-10 p-5">
+         <div className="flex lg:flex-row flex-col justify-between items-start">
             <div className="flex gap-5 items-center">
                <div className="flex flex-col items-center gap-3">
-                  <Avatar variant="filled" src={url} size={150} alt="it's me" />
+                  <Avatar variant="filled" src={url} size={matches ? 120 : 150} alt="it's me" />
                   {edit && (
                      <Button size="sm" variant="outline" onClick={open}>
                         Upload
@@ -107,16 +109,28 @@ const Profile = () => {
                   )}
                </div>
                <div className="flex flex-col gap-3">
-                  <div className="text-3xl font-medium text-neutral-900">{user.name}</div>
-                  <div className="text-xl text-neutral-700">{user.email}</div>
+                  <div className="md:text-3xl text-xl font-medium text-neutral-900">{user.name}</div>
+                  <div className="md:text-xl text-lg text-neutral-700">{user.email}</div>
                </div>
             </div>
             {edit ? (
-               <Button onClick={handleSubmit} variant="filled" leftSection={<IconEdit />} size="lg" type="submit">
+               <Button
+                  onClick={handleSubmit}
+                  variant="filled"
+                  leftSection={<IconEdit />}
+                  size={matches ? "sm" : "lg"}
+                  type="submit"
+               >
                   Submit
                </Button>
             ) : (
-               <Button onClick={handleEdit} variant="filled" leftSection={<IconEdit />} size="lg" type="button">
+               <Button
+                  onClick={handleEdit}
+                  variant="filled"
+                  leftSection={<IconEdit />}
+                  size={matches ? "sm" : "lg"}
+                  type="button"
+               >
                   Edit
                </Button>
             )}
@@ -127,21 +141,21 @@ const Profile = () => {
             <Table striped stripedColor="primary.1" verticalSpacing="md" withRowBorders={false}>
                <Table.Tbody className="[&>tr]:!mb-3 [&_td]:!w-1/2">
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Date of Birth</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Date of Birth</Table.Td>
 
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <DateInput {...form.getInputProps("dob")} placeholder="Date of Birth" />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{formatDate(patient.dob) ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{formatDate(patient.dob) ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Phone</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Phone</Table.Td>
 
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <NumberInput
                               placeholder="Enter your phone number"
                               hideControls
@@ -151,25 +165,25 @@ const Profile = () => {
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.phone ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{patient.phone ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Address</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Address</Table.Td>
 
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <TextInput placeholder="Enter your address" {...form.getInputProps("address")} />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.address ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{patient.address ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Aadhar Number</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Aadhar Number</Table.Td>
 
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <NumberInput
                               maxLength={12}
                               clampBehavior="strict"
@@ -179,13 +193,13 @@ const Profile = () => {
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.aadharNo ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{patient.aadharNo ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Blood Group</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Blood Group</Table.Td>
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <Select
                               // label="Blood Group"
                               placeholder="Select blood group"
@@ -194,14 +208,14 @@ const Profile = () => {
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{bloodGroup[patient.bloodGroup] ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{bloodGroup[patient.bloodGroup] ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Allergies</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Allergies</Table.Td>
 
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <TagsInput
                               placeholder="Add allergy"
                               {...form.getInputProps("allergies")}
@@ -209,14 +223,14 @@ const Profile = () => {
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.allergies ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{patient.allergies ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                   <Table.Tr>
-                     <Table.Td className="font-semibold text-xl">Chronic Diseases</Table.Td>
+                     <Table.Td className="md:font-semibold md:text-xl text-lg font-medium">Chronic Diseases</Table.Td>
 
                      {edit ? (
-                        <Table.Td className="text-xl">
+                        <Table.Td className="md:text-xl text-lg">
                            <TagsInput
                               placeholder="Add chronic disease"
                               {...form.getInputProps("chronicDisease")}
@@ -224,7 +238,7 @@ const Profile = () => {
                            />
                         </Table.Td>
                      ) : (
-                        <Table.Td className="text-xl">{patient.chronicDiseases ?? "-"}</Table.Td>
+                        <Table.Td className="md:text-xl text-lg">{patient.chronicDiseases ?? "-"}</Table.Td>
                      )}
                   </Table.Tr>
                </Table.Tbody>

@@ -11,9 +11,9 @@ import {
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconEdit, IconLayoutGrid, IconPlus, IconSearch, IconTable, IconTrash } from "@tabler/icons-react";
+import { IconLayoutGrid, IconPlus, IconSearch, IconTable, IconTrash } from "@tabler/icons-react";
 import { FilterMatchMode, FilterOperator } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
@@ -59,6 +59,7 @@ export default function Appointment() {
    const [tab, setTab] = useState<string>("Today");
    const user = useSelector((state: any) => state.user);
    const [loading, setLoading] = useState<boolean>(false);
+   const matches = useMediaQuery("(max-width: 768px)");
    const [filters, setFilters] = useState<DataTableFilterMeta>({
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
       doctorName: {
@@ -190,9 +191,9 @@ export default function Appointment() {
    const actionBodyTemplate = (rowData: any) => {
       return (
          <div className="flex gap-2">
-            <ActionIcon>
+            {/* <ActionIcon>
                <IconEdit size={20} stroke={1.5} />
-            </ActionIcon>
+            </ActionIcon> */}
 
             <ActionIcon color="red" onClick={() => handleDelete(rowData)}>
                <IconTrash size={20} stroke={1.5} />
@@ -227,7 +228,7 @@ export default function Appointment() {
 
    const leftToolbarTemplate = () => {
       return (
-         <Button leftSection={<IconPlus />} variant="filled" onClick={open}>
+         <Button leftSection={<IconPlus />} variant="filled" onClick={open} size={matches ? "xs" : "md"}>
             Schedule Appointment
          </Button>
       );
@@ -238,6 +239,7 @@ export default function Appointment() {
          <div className="flex gap-5 items-center">
             <SegmentedControl
                value={view}
+               size={matches ? "xs" : "md"}
                color="primary"
                onChange={setView}
                data={[
@@ -246,6 +248,7 @@ export default function Appointment() {
                ]}
             />
             <TextInput
+               className="lg:block hidden"
                leftSection={<IconSearch />}
                fw={500}
                value={globalFilterValue}

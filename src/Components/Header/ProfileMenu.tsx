@@ -1,4 +1,5 @@
 import { Avatar, Menu, Text } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import {
    IconArrowsLeftRight,
    IconMessageCircle,
@@ -28,12 +29,12 @@ function ProfileMenu() {
    }, [user]);
 
    const url = useProtectedImage(picId);
-
+   const matches = useMediaQuery("(min-width: 768px)");
    return (
       <Menu shadow="md" width={200}>
          <Menu.Target>
             <div className="flex items-center gap-3 cursor-pointer">
-               <span className="font-medium text-lg text-neutral-900">{user?.name}</span>
+               {!matches && <span className="font-medium text-lg text-neutral-900">{user?.name}</span>}
                <Avatar variant="filled" src={url} size={50} alt="it's me" />
             </div>
          </Menu.Target>
