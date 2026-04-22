@@ -13,20 +13,7 @@ import { errorNotification, successNotification } from "../../../Utility/Notific
 import { capitalizeFirstLetter } from "../../../Utility/OtherUtility";
 import MedCard from "./MedCard";
 
-type Medicine = {
-   name: string;
-   medicineId?: number;
-   dosage: string;
-   frequency: string;
-   duration: number;
-   route: string;
-   type: string;
-   instructions: string;
-   prescriptionId?: string;
-};
-
 const MedicineDoctor = () => {
-   const navigate = useNavigate();
    const [data, setData] = useState<any[]>([]);
    const [edit, setEdit] = useState<boolean>(true);
    const [filters, setFilters] = useState<DataTableFilterMeta>({
@@ -119,18 +106,6 @@ const MedicineDoctor = () => {
                onChange={onGlobalFilterChange}
                placeholder="Keyword Search"
             />
-         </div>
-      );
-   };
-
-   const header = renderHeader();
-
-   const actionBodyTemplate = (rowData: any) => {
-      return (
-         <div className="flex gap-2">
-            <ActionIcon onClick={() => onEdit(rowData)}>
-               <IconEdit size={20} stroke={1.5} />
-            </ActionIcon>
          </div>
       );
    };

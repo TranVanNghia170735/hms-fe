@@ -25,7 +25,7 @@ type Medicine = {
    prescriptionId?: string;
 };
 
-const Medicine = () => {
+const MedicineAdmin = () => {
    const navigate = useNavigate();
    const [data, setData] = useState<any[]>([]);
    const [edit, setEdit] = useState<boolean>(true);
@@ -302,4 +302,4 @@ const Medicine = () => {
    );
 };
 
-export default Medicine;
+export default MedicineAdmin;
